@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow — Client Portal & Activity Hub</title>
+<link rel="stylesheet" href="../css/style.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+  .dash-header { padding: 2.5rem 0 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .dash-greeting { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--gold-light); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 500; }
+  .dash-title { font-size: clamp(1.8rem, 3.5vw, 2.5rem); margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif; font-weight: 800; }
+  .dash-role { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--gold-bright); background: var(--gold-dim); padding: 0.35rem 0.85rem; border-radius: 20px; border: 1px solid rgba(245,158,11,0.3); display: inline-block; }
+  .deals-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+  .deals-header h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text2); }
+  .deals-list { display: flex; flex-direction: column; gap: 1rem; background: transparent; border: none; }
+  .deals-panel { display: none; }
+  .deals-panel.active { display: block; animation: fadeUp 0.35s ease-out both; }
+
+  /* ── NOTIFICATION CENTER STYLES ── */
+  .notif-btn {
+    position: relative;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.4rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.2s;
+  }
+  .notif-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--gold); }
+  .notif-badge {
+    background: var(--gold);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.1rem 0.45rem;
+    border-radius: 10px;
+    display: none;
+    line-height: 1.2;
+    animation: pulseGlow 2s infinite;
+  }
+  .notif-badge.active { display: inline-block; }
+  @keyframes pulseGlow { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(245,158,11,0.5); } 50% { transform: scale(1.1); box-shadow: 0 0 10px rgba(245,158,11,0.8); } }
+
+  /* Notification Drawer Modal */
+  .notif-drawer {
+    position: fixed;
+    top: 70px;
+    right: 2rem;
+    width: 380px;
+    max-width: calc(100vw - 2rem);
+    background: rgba(17,24,39,0.97);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    z-index: 999;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: drawerIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  @keyframes drawerIn { from { opacity: 0; transform: translateY(-10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .notif-drawer.open { display: flex; }
+  .notif-drawer-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.02);
+  }
+  .notif-drawer-title { font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; }
+  .notif-drawer-actions { display: flex; gap: 0.5rem; }
+  .notif-drawer-body {
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .notif-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    transition: all 0.2s;
+  }
+  .notif-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(245,158,11,0.3); }
+  .notif-item.unread { border-left: 3px solid var(--gold); background: rgba(245,158,11,0.05); }
+  .notif-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; }
+  .notif-content { flex: 1; }
+  .notif-title { font-size: 0.84rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; letter-spacing: -0.01em; }
+  .notif-msg { font-size: 0.76rem; color: var(--text2); line-height: 1.45; }
+  .notif-time { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text3); margin-top: 0.35rem; }
+  
+  /* Portfolio Feed Card */
+  .feed-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .feed-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+  }
+  .feed-card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold-light);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: blinkDot 2s infinite;
+  }
+  @keyframes blinkDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* ── AI VOICE & TEXT MODAL OVERLAY ON CLIENT DASHBOARD ── */
+  .ai-deal-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(3,7,18,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .ai-deal-modal-overlay.open {
+    display: flex;
+    animation: modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(15px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .ai-modal-box {
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-radius: 20px;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(245,158,11,0.2) inset;
+    width: 100%;
+    max-width: 980px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    padding: 2.2rem;
+  }
+  .ai-modal-close-btn {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text3);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .ai-modal-close-btn:hover { background: rgba(239,68,68,0.2); color: #ef4444; border-color: #ef4444; }
+
+  .ai-modal-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 1.5rem;
+    margin-top: 1.2rem;
+  }
+  @media (max-width: 800px) {
+    .ai-modal-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Freelancer Matches View in Modal */
+  .modal-freelancers-view {
+    display: none;
+    margin-top: 1rem;
+    animation: fadeUp 0.35s ease both;
+  }
+  .modal-freelancers-view.show {
+    display: block;
+  }
+
+  /* ── CELEBRATION & CONFETTI ANIMATIONS ── */
+  .confetti-canvas-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10000;
+  }
+
+  /* Code Generated Shimmer Box */
+  .celebrate-code-box {
+    position: relative;
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(168,85,247,0.15));
+    border: 2px solid var(--gold);
+    padding: 0.6rem 2rem;
+    border-radius: 14px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    color: var(--gold-bright);
+    box-shadow: 0 0 35px rgba(245,158,11,0.4), 0 0 15px rgba(168,85,247,0.3) inset;
+    animation: codeBoxPulse 2.5s infinite alternate, popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    margin: 0.8rem 0;
+    overflow: hidden;
+  }
+  .celebrate-code-box::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 40%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transform: rotate(30deg);
+    animation: sweepLight 3s infinite;
+  }
+  @keyframes sweepLight {
+    0% { left: -60%; }
+    50%, 100% { left: 140%; }
+  }
+  @keyframes codeBoxPulse {
+    0% { transform: scale(0.98); box-shadow: 0 0 25px rgba(245,158,11,0.3); }
+    100% { transform: scale(1.03); box-shadow: 0 0 45px rgba(245,158,11,0.6); }
+  }
+  @keyframes popIn {
+    0% { opacity: 0; transform: scale(0.7); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Cascading Card Entrance Animation */
+  .fl-stagger-card {
+    opacity: 0;
+    animation: staggerCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  @keyframes staggerCard {
+    from { opacity: 0; transform: translateY(20px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── PAYMENT DONE ANIMATED CHECKMARK & COINS ── */
+  .payment-done-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(3,7,18,0.92);
+    backdrop-filter: blur(18px);
+    z-index: 10001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .payment-done-modal.show {
+    display: flex;
+    animation: modalIn 0.35s ease both;
+  }
+  .payment-card-content {
+    background: var(--card);
+    border: 2px solid var(--green);
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 25px 80px rgba(16,185,129,0.35);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Checkmark SVG Draw */
+  .checkmark-circle {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: rgba(16,185,129,0.12);
+    border: 2px solid var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.2rem;
+    box-shadow: 0 0 30px rgba(16,185,129,0.4);
+    animation: pulseGlowGreen 2s infinite;
+  }
+  @keyframes pulseGlowGreen {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(16,185,129,0.3); }
+    50% { transform: scale(1.08); box-shadow: 0 0 40px rgba(16,185,129,0.6); }
+  }
+  .svg-check {
+    width: 44px;
+    height: 44px;
+    stroke: var(--green);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: drawCheck 0.6s cubic-bezier(0.65, 0, 0.45, 1) 0.2s forwards;
+  }
+  @keyframes drawCheck {
+    100% { stroke-dashoffset: 0; }
+  }
+
+  /* Floating Coins Particle Effect */
+  .coin-floater {
+    position: absolute;
+    font-size: 1.6rem;
+    pointer-events: none;
+    animation: floatCoinUp 1.8s ease-out forwards;
+  }
+  @keyframes floatCoinUp {
+    0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-140px) scale(1.3) rotate(360deg); opacity: 0; }
+  }
+</style>
+<script>
+  (function() {
+    const theme = localStorage.getItem('supremex-theme') || 'dark';
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme');
+    }
+  })();
+</script>
+</head>
+<body class="fade-in">
+
+<!-- Canvas for Real Confetti Particles -->
+<canvas id="confettiCanvas" class="confetti-canvas-overlay"></canvas>
+
+<!-- Payment Done Celebration Modal -->
+<div class="payment-done-modal" id="paymentDoneModal">
+  <div class="payment-card-content" id="paymentCardInner">
+    <div class="checkmark-circle">
+      <svg class="svg-check" viewBox="0 0 24 24">
+        <path d="M4 12l5 5L20 6"/>
+      </svg>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--green);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.4rem">
+      ✓ PAYMENT RELEASED VIA ALGORAND ESCROW
+    </div>
+    <h2 style="font-size:1.8rem;font-family:'Outfit',sans-serif;margin-bottom:0.4rem" id="payDoneTitle">Payment Completed!</h2>
+    <div style="font-family:'Outfit',sans-serif;font-size:2.4rem;font-weight:900;color:var(--gold-bright);margin:0.6rem 0" id="payDoneAmount">
+      ₹32,000.00
+    </div>
+    <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.5rem" id="payDoneSub">
+      Funds have been transferred directly to the verified freelancer wallet. Multi-sig transaction verified on Algorand Ledger.
+    </p>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:0.75rem;margin-bottom:1.5rem;font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--cyan)" id="payDoneTx">
+      TX: ALGO-REL-98402X-256BIT
+    </div>
+    <button class="btn btn-gold btn-full" id="closePaymentDoneBtn" style="padding:0.8rem">
+      🚀 Return to Dashboard
+    </button>
+  </div>
+</div>
+
+<nav class="topnav">
+  <a href="client-dashboard.html" class="nav-logo">Nex<span>row</span> <span style="font-size:0.7rem;font-weight:600;color:var(--gold-bright);margin-left:0.4rem;padding:0.15rem 0.5rem;background:var(--gold-dim);border-radius:12px;border:1px solid rgba(245,158,11,0.3)">CLIENT</span></a>
+  <div class="nav-right">
+    <a href="ai-agent-demo.html" class="nav-link" style="color:var(--gold-bright);font-weight:700">🤖 AI Agent Demo</a>
+    <a href="how-it-works.html" class="nav-link" style="font-size:0.78rem">🚀 Walkthrough</a>
+    <!-- Notification Bell Button -->
+    <button class="notif-btn" id="notifCenterBtn" title="Client Activity & Step Notifications">
+      <span>🔔</span> Notifications <span class="notif-badge" id="notifCounter">0</span>
+    </button>
+    <button class="theme-toggle-btn" id="themeToggleBtn">🌙 Dark</button>
+    <span class="nav-user" id="navUser">client@nexrow.io</span>
+    <button class="nav-logout" id="logoutBtn">Logout</button>
+  </div>
+</nav>
+
+<!-- Notification Drawer Dropdown -->
+<div class="notif-drawer" id="notifDrawer">
+  <div class="notif-drawer-header">
+    <div class="notif-drawer-title">🔔 Step Notifications & Activity</div>
+    <div class="notif-drawer-actions">
+      <button class="btn btn-outline btn-sm" id="clearNotifsBtn" style="font-size:0.65rem;padding:0.2rem 0.5rem">Clear</button>
+      <button class="btn btn-outline btn-sm" id="closeNotifBtn" style="font-size:0.65rem;padding:0.2rem 0.5rem">✕</button>
+    </div>
+  </div>
+  <div class="notif-drawer-body" id="notifDrawerList">
+    <!-- Populated dynamically -->
+  </div>
+</div>
+
+<div class="container">
+  <div class="dash-header fade-up">
+    <div class="dash-greeting" id="dashGreeting">// Welcome back, Client</div>
+    <h1 class="dash-title">👤 Client Escrow Portal</h1>
+    <div class="dash-role">👤 Verified Client Account · Real-Time Step Notifications</div>
+  </div>
+
+  <div class="stat-row fade-up">
+    <div class="stat-box"><div class="stat-box-num" id="statVaulted">₹77,000.00</div><div class="stat-box-label">Total Escrow Funds Vaulted</div></div>
+    <div class="stat-box"><div class="stat-box-num" id="statActive">2</div><div class="stat-box-label">Active Escrow Deals</div></div>
+    <div class="stat-box"><div class="stat-box-num" id="statCompleted">1</div><div class="stat-box-label">Released Transactions</div></div>
+  </div>
+
+  <!-- Real-Time Step Notifications & Activity Banner -->
+  <div class="feed-card fade-up">
+    <div class="feed-card-header">
+      <div class="feed-card-title"><span class="pulse-dot"></span> Live Escrow Activity & Step Notifications</div>
+      <a href="how-it-works.html" class="btn btn-outline btn-sm" style="font-size:0.7rem;padding:0.25rem 0.65rem">Launch Interactive Walkthrough →</a>
+    </div>
+    <div id="activityFeedList" style="display:flex;flex-direction:column;gap:0.6rem">
+      <!-- Live Notifications rendered here -->
+    </div>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <!-- Vertical Portal Layout (Left Sidebar + Right Panels) -->
+  <div class="portal-layout fade-up">
+    
+    <!-- LEFT SIDEBAR NAVIGATION -->
+    <aside class="portal-sidebar">
+      <div class="sidebar-title">// Client Navigation</div>
+      <button class="portal-tab-btn active" id="tabAll">
+        <span>💼</span> Active Escrows
+      </button>
+      <button class="portal-tab-btn" id="tabReview">
+        <span>📦</span> Review Deliveries
+      </button>
+      <button class="portal-tab-btn" id="tabCompleted">
+        <span>✅</span> Released Payouts
+      </button>
+      <button class="portal-tab-btn" id="tabVault">
+        <span>💳</span> Deposit Vault
+      </button>
+    </aside>
+
+    <!-- RIGHT CONTENT PANELS -->
+    <main class="portal-content">
+      <div class="deals-header">
+        <h3>// Client Escrow Workspace</h3>
+        <button class="btn btn-gold btn-sm" id="openCreateDealBtn" style="box-shadow:0 4px 18px rgba(245,158,11,0.4)">+ Create New Deal</button>
+      </div>
+
+      <div id="loading" class="flex-center" style="padding:3rem;display:none"><div class="spinner"></div></div>
+      
+      <!-- TAB 1: ALL ACTIVE ESCROWS -->
+      <div class="deals-panel active" id="panel-all"><div class="deals-list" id="list-all"></div></div>
+      
+      <!-- TAB 2: REVIEW DELIVERIES -->
+      <div class="deals-panel" id="panel-review"><div class="deals-list" id="list-review"></div></div>
+      
+      <!-- TAB 3: RELEASED PAYOUTS -->
+      <div class="deals-panel" id="panel-completed"><div class="deals-list" id="list-completed"></div></div>
+      
+      <!-- TAB 4: DEPOSIT VAULT -->
+      <div class="deals-panel" id="panel-vault">
+        <div class="card card-lg">
+          <div class="card-title">Escrow Deposit Balance & Protection Guarantee</div>
+          <p style="margin-bottom:1.5rem;color:var(--text2)">Your funds are protected by 256-Bit Bank Level Multi-Signature Escrow. Funds are never transferred to freelancers until you explicitly verify work delivery using your 4-digit OTP security pin.</p>
+          <div style="display:flex;gap:2rem;margin-top:1rem;flex-wrap:wrap">
+            <div><span class="muted">Protected Vault Balance:</span> <h3 style="color:var(--gold-bright)" id="vaultBalanceText">₹77,000.00</h3></div>
+            <div><span class="muted">Protection Level:</span> <h3 style="color:var(--green)">100% Guaranteed Refund Policy</h3></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <div style="text-align:center;margin-top:3rem">
+    <a href="role-select.html" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text3);text-decoration:none">← Switch Role</a>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────
+     POPUP MODAL: AI VOICE & TEXT GUIDED DEAL CREATOR
+────────────────────────────────────────────────────────────────── -->
+<div class="ai-deal-modal-overlay" id="aiDealModal">
+  <div class="ai-modal-box">
+    <button class="ai-modal-close-btn" id="closeAiModalBtn">✕</button>
+
+    <!-- STAGE 1: AI VOICE & INTERVIEW SCREEN -->
+    <div id="modalStageInterview">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.4rem">
+        <span style="font-size:1.8rem">🤖</span>
+        <div>
+          <h2 style="font-size:1.4rem;font-family:'Outfit',sans-serif;margin:0">Nexrow AI Voice &amp; Text Deal Creator</h2>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--gold)">// Speak with 🎙️ or click quick suggestion chips</div>
+        </div>
+      </div>
+
+      <div class="ai-modal-grid">
+        <!-- Chat Voice Assistant Stream -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;height:460px;overflow:hidden">
+          <div style="padding:0.75rem 1rem;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--green)" id="modalAiStatus">● AI Ready</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold-bright)" id="modalStepBadge">Step 1 of 5</span>
+          </div>
+          <div id="modalChatStream" style="flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.8rem"></div>
+          <div style="padding:0.75rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:0.5rem;background:rgba(0,0,0,0.3)">
+            <button id="modalMicBtn" style="width:40px;height:40px;border-radius:50%;background:var(--gold-dim);border:1px solid var(--gold);color:var(--gold);cursor:pointer;font-size:1.1rem;transition:all 0.2s">🎙️</button>
+            <input type="text" id="modalInput" placeholder="Speak with 🎙️ or type your answer..." style="flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.8rem;color:#fff;font-size:0.82rem;outline:none"/>
+            <button id="modalSendBtn" class="btn btn-gold btn-sm" style="padding:0.55rem 0.9rem">Send ➔</button>
+          </div>
+        </div>
+
+        <!-- Live Contract Preview -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;display:flex;flex-direction:column;justify-content:space-between">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--cyan);text-transform:uppercase;margin-bottom:0.4rem">⚡ Live Contract Sync</div>
+            <div id="modalPvTitle" style="font-family:'Outfit',sans-serif;font-size:1.2rem;font-weight:700;color:var(--text);margin-bottom:0.4rem">Untitled Escrow Project</div>
+            <div id="modalPvDesc" style="font-size:0.8rem;color:var(--text2);margin-bottom:1rem;background:rgba(255,255,255,0.02);padding:0.6rem;border-radius:6px;border:1px dashed var(--border)">// Scope will be extracted by AI...</div>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:1rem">
+              <div style="background:var(--card);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:0.62rem;color:var(--text3);font-family:'DM Mono',monospace">BUDGET LOCKED</div>
+                <strong id="modalPvBudget" style="color:var(--gold-bright);font-size:1.05rem">₹0</strong>
+              </div>
+              <div style="background:var(--card);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:0.62rem;color:var(--text3);font-family:'DM Mono',monospace">DEADLINE</div>
+                <strong id="modalPvDeadline" style="font-size:0.88rem">Not Set</strong>
+              </div>
+            </div>
+
+            <div style="font-size:0.75rem;color:var(--green);background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);padding:0.6rem;border-radius:6px;margin-bottom:1rem">
+              🔒 256-Bit Multi-Sig Escrow Vault Guarantee
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.6rem">
+            <a href="create-deal.html" class="btn btn-outline btn-sm" style="flex:1;text-align:center">Full Page Mode ↗</a>
+            <button id="modalConfirmBtn" class="btn btn-gold btn-sm" style="flex:1">🚀 Create Deal →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAGE 2: MATCHED FREELANCERS SELECTION SCREEN (Appears on clicking Create Deal) -->
+    <div id="modalStageFreelancers" class="modal-freelancers-view">
+      <div style="text-align:center;margin-bottom:1.5rem">
+        <div style="font-size:2.6rem;margin-bottom:0.3rem;animation:popIn 0.5s ease">🎉</div>
+        <h2 style="font-size:1.6rem;font-family:'Outfit',sans-serif;margin:0 0 0.3rem;color:var(--text)">Deal Created &amp; Escrow Code Generated!</h2>
+        
+        <!-- Shimmering Animated Code Box -->
+        <div>
+          <div class="celebrate-code-box" id="modalGeneratedCode">
+            NEX-XXXXX
+          </div>
+        </div>
+
+        <p style="font-size:0.85rem;color:var(--text2);margin:0.2rem 0 1rem">Select any verified freelancer below to launch your live workspace walkthrough simulation:</p>
+      </div>
+
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--gold-bright);margin-bottom:0.8rem">
+        🎯 MATCHED FREELANCERS FOR YOUR PROJECT:
+      </div>
+      <div id="modalFreelancersList" style="display:flex;flex-direction:column;gap:0.8rem;max-height:360px;overflow-y:auto;padding-right:0.4rem">
+        <!-- Rendered dynamically with staggered float-in animation -->
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = 'https://qhcxwwobfqsecwqsvwid.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoY3h3d29iZnFzZWN3cXN2d2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODc0NzQsImV4cCI6MjA5NDc2MzQ3NH0.ZIcAU6PjSwEHeGZtD8B8NKJEd3YifgZa7S7hR9zbkMM';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// ─────────────────────────────────────────────────────────────────
+// CONFETTI PARTICLE BURST ENGINE
+// ─────────────────────────────────────────────────────────────────
+function launchConfettiCelebration() {
+  const canvas = document.getElementById('confettiCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ['#f59e0b', '#fbbf24', '#10b981', '#38bdf8', '#a855f7', '#ec4899', '#ffffff'];
+
+  for (let i = 0; i < 90; i++) {
+    particles.push({
+      x: canvas.width / 2,
+      y: canvas.height * 0.45,
+      vx: (Math.random() - 0.5) * 18,
+      vy: (Math.random() - 0.7) * 16,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rSpeed: (Math.random() - 0.5) * 12,
+      opacity: 1,
+      gravity: 0.38
+    });
+  }
+
+  let animationFrame;
+  function updateConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let aliveCount = 0;
+
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.gravity;
+      p.rotation += p.rSpeed;
+      p.opacity -= 0.012;
+
+      if (p.opacity > 0) {
+        aliveCount++;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.globalAlpha = Math.max(0, p.opacity);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+        ctx.restore();
+      }
+    });
+
+    if (aliveCount > 0) {
+      animationFrame = requestAnimationFrame(updateConfetti);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      cancelAnimationFrame(animationFrame);
+    }
+  }
+  updateConfetti();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PAYMENT DONE ANIMATION WITH FLOATING COINS
+// ─────────────────────────────────────────────────────────────────
+export function triggerPaymentDoneAnimation(amount = 32000, title = "Milestone 1 Completed") {
+  const modal = document.getElementById('paymentDoneModal');
+  if (!modal) return;
+
+  document.getElementById('payDoneTitle').textContent = `${title} Paid ✓`;
+  document.getElementById('payDoneAmount').textContent = `₹${Number(amount).toLocaleString('en-IN')}.00`;
+  document.getElementById('payDoneTx').textContent = `TX: ALGO-REL-${Math.floor(100000 + Math.random() * 900000)}X-256BIT`;
+
+  modal.classList.add('show');
+  launchConfettiCelebration();
+
+  // Spawn floating rupee coins
+  const card = document.getElementById('paymentCardInner');
+  const coinIcons = ['💰', '💸', '✨', '₹', '🪙'];
+  for (let i = 0; i < 14; i++) {
+    const coin = document.createElement('div');
+    coin.className = 'coin-floater';
+    coin.textContent = coinIcons[Math.floor(Math.random() * coinIcons.length)];
+    coin.style.left = `${Math.random() * 80 + 10}%`;
+    coin.style.bottom = `${Math.random() * 40 + 20}px`;
+    coin.style.animationDelay = `${Math.random() * 0.5}s`;
+    card.appendChild(coin);
+    setTimeout(() => coin.remove(), 2200);
+  }
+}
+
+document.getElementById('closePaymentDoneBtn')?.addEventListener('click', () => {
+  document.getElementById('paymentDoneModal')?.classList.remove('show');
+});
+
+// Theme Toggle
+const themeBtn = document.getElementById('themeToggleBtn');
+if (themeBtn) {
+  const currentTheme = localStorage.getItem('supremex-theme') || 'dark';
+  themeBtn.innerHTML = currentTheme === 'light' ? '☀️ Light' : '🌙 Dark';
+  themeBtn.addEventListener('click', () => {
+    const isLight = document.body.classList.toggle('light-theme');
+    document.documentElement.classList.toggle('light-theme', isLight);
+    const newTheme = isLight ? 'light' : 'dark';
+    localStorage.setItem('supremex-theme', newTheme);
+    themeBtn.innerHTML = isLight ? '☀️ Light' : '🌙 Dark';
+  });
+}
+
+function formatINR(amount) { return '₹' + Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+function timeAgo(dateString) {
+  if (!dateString) return 'Just now';
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffSec = Math.floor((now - past) / 1000);
+  if (diffSec < 45) return 'Just now';
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+  return past.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+}
+
+// ── 20+ Verified Freelancers Catalog ──
+const FREELANCERS_DATABASE = [
+  { id: 1, name: 'Aarav Sharma', email: 'aarav@nexrow.io', domain: 'Full Stack Web Development', exp: '5 Years', rating: '⭐ 4.9', projects: 128, rate: '₹1,500/hr', location: 'Mumbai', bio: 'Builds scalable React, Node.js & MongoDB applications.', keywords: ['web', 'react', 'node', 'full stack', 'app', 'website', 'code', 'js', 'frontend', 'developer'] },
+  { id: 2, name: 'Priya Patel', email: 'priya@nexrow.io', domain: 'UI/UX Design', exp: '4 Years', rating: '⭐ 4.8', projects: 95, rate: '₹1,200/hr', location: 'Ahmedabad', bio: 'Creates premium mobile and web interfaces using Figma.', keywords: ['ui', 'ux', 'design', 'figma', 'mobile', 'web interface', 'app design', 'prototype'] },
+  { id: 3, name: 'Rohan Mehta', email: 'rohan@nexrow.io', domain: 'Logo & Brand Identity', exp: '6 Years', rating: '⭐ 5.0', projects: 210, rate: '₹1,000/hr', location: 'Pune', bio: 'Expert in minimalist and luxury brand identity.', keywords: ['logo', 'brand', 'identity', 'branding', 'vector', 'minimalist'] },
+  { id: 4, name: 'Sneha Kulkarni', email: 'sneha@nexrow.io', domain: 'Sketch Artist', exp: '3 Years', rating: '⭐ 4.7', projects: 76, rate: '₹850/hr', location: 'Nagpur', bio: 'Hyper-realistic pencil portraits and custom sketches.', keywords: ['sketch', 'sketching', 'pencil', 'portrait', 'hand drawn', 'artist'] },
+  { id: 5, name: 'Aditya Verma', email: 'aditya@nexrow.io', domain: 'WordPress Development', exp: '5 Years', rating: '⭐ 4.8', projects: 140, rate: '₹900/hr', location: 'Delhi', bio: 'Develops SEO-friendly business websites.', keywords: ['wordpress', 'wp', 'cms', 'website', 'blog', 'seo'] },
+  { id: 6, name: 'Neha Singh', email: 'neha@nexrow.io', domain: 'Digital Painting', exp: '4 Years', rating: '⭐ 4.9', projects: 88, rate: '₹1,100/hr', location: 'Jaipur', bio: 'Creates fantasy, concept and portrait digital artwork.', keywords: ['digital painting', 'painting', 'digital art', 'concept art'] },
+  { id: 7, name: 'Karan Joshi', email: 'karan@nexrow.io', domain: 'Mobile App Development', exp: '6 Years', rating: '⭐ 4.9', projects: 135, rate: '₹1,700/hr', location: 'Bengaluru', bio: 'Flutter & React Native expert for Android/iOS apps.', keywords: ['mobile', 'app', 'android', 'ios', 'flutter', 'react native'] },
+  { id: 8, name: 'Isha Kapoor', email: 'isha@nexrow.io', domain: 'Graphic Design', exp: '4 Years', rating: '⭐ 4.8', projects: 160, rate: '₹950/hr', location: 'Chandigarh', bio: 'Social media creatives, brochures and banners.', keywords: ['graphic', 'graphics', 'social media', 'banner', 'brochure'] },
+  { id: 9, name: 'Rahul Nair', email: 'rahul@nexrow.io', domain: 'Backend Development', exp: '7 Years', rating: '⭐ 4.9', projects: 182, rate: '₹1,600/hr', location: 'Kochi', bio: 'Builds secure REST APIs using Node.js & Express.', keywords: ['backend', 'api', 'express', 'node', 'database', 'sql'] },
+  { id: 10, name: 'Meera Deshmukh', email: 'meera@nexrow.io', domain: 'Pot Design & Ceramic Art', exp: '5 Years', rating: '⭐ 4.8', projects: 92, rate: '₹700/hr', location: 'Kolhapur', bio: 'Handmade decorative and customized ceramic pots.', keywords: ['pot', 'ceramic', 'pottery', 'decor', 'handmade'] },
+  { id: 11, name: 'Vikram Rao', email: 'vikram@nexrow.io', domain: 'Frontend Development', exp: '5 Years', rating: '⭐ 4.8', projects: 155, rate: '₹1,300/hr', location: 'Hyderabad', bio: 'React, Next.js and Tailwind CSS specialist.', keywords: ['frontend', 'react', 'next.js', 'css', 'tailwind', 'html'] },
+  { id: 12, name: 'Dev Malhotra', email: 'dev@nexrow.io', domain: 'Video Editing & Motion Graphics', exp: '6 Years', rating: '⭐ 4.9', projects: 175, rate: '₹1,250/hr', location: 'Indore', bio: 'Adobe Premiere Pro & After Effects expert.', keywords: ['video', 'editing', 'motion graphics', 'youtube', 'reels'] }
+];
+
+function findMatchingFreelancers(titleText, descText) {
+  const combined = ((titleText || '') + ' ' + (descText || '')).toLowerCase();
+  let matches = FREELANCERS_DATABASE.filter(f => {
+    return f.keywords.some(kw => combined.includes(kw)) ||
+           combined.includes(f.name.toLowerCase()) ||
+           combined.includes(f.domain.toLowerCase());
+  });
+  if (!matches.length) {
+    matches = FREELANCERS_DATABASE.slice(0, 4);
+  }
+  return matches;
+}
+
+// Render Notifications
+function renderNotifications() {
+  let notifs = JSON.parse(localStorage.getItem('sx_notifications') || '[]');
+  
+  if (!notifs.length) {
+    notifs = [
+      { id: 'n1', title: 'Freelancer Assigned', message: 'Rohan Mehta assigned to Logo & Brand Identity Deal (₹32,000).', icon: '🤝', badge: 'Assigned', time: new Date(Date.now() - 120000).toISOString(), read: false },
+      { id: 'n2', title: 'Escrow Vault Locked', message: '₹32,000 secured into 256-bit multi-sig vault.', icon: '🔒', badge: 'Vault Active', time: new Date(Date.now() - 300000).toISOString(), read: false },
+      { id: 'n3', title: 'Milestone 2 Released', message: 'M2 payment of ₹12,800 released to freelancer.', icon: '💸', badge: 'Milestone', time: new Date(Date.now() - 600000).toISOString(), read: true }
+    ];
+    localStorage.setItem('sx_notifications', JSON.stringify(notifs));
+  }
+
+  const unreadCount = notifs.filter(n => !n.read).length;
+  const badgeEl = document.getElementById('notifCounter');
+  if (badgeEl) {
+    badgeEl.textContent = unreadCount;
+    badgeEl.classList.toggle('active', unreadCount > 0);
+  }
+
+  // Render in Top Drawer
+  const drawerList = document.getElementById('notifDrawerList');
+  if (drawerList) {
+    drawerList.innerHTML = notifs.map(n => `
+      <div class="notif-item ${n.read ? '' : 'unread'}">
+        <span class="notif-icon">${n.icon || '🔔'}</span>
+        <div class="notif-content">
+          <div class="notif-title">${n.title}</div>
+          <div class="notif-msg">${n.message}</div>
+          <div class="notif-time">${timeAgo(n.time)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Render in Main Activity Feed Card
+  const feedList = document.getElementById('activityFeedList');
+  if (feedList) {
+    feedList.innerHTML = notifs.slice(0, 4).map(n => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;background:rgba(255,255,255,0.025);border:1px solid var(--border);border-radius:8px;gap:1rem;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:0.75rem">
+          <span style="font-size:1.3rem">${n.icon || '🔔'}</span>
+          <div>
+            <div style="font-size:0.84rem;font-weight:700;color:var(--text)">${n.title}</div>
+            <div style="font-size:0.75rem;color:var(--text2)">${n.message}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <span style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--text3)">${timeAgo(n.time)}</span>
+          <span class="badge badge-gold" style="font-size:0.65rem">${n.badge || 'Escrow'}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+// Notification Drawer Toggles
+const notifBtn = document.getElementById('notifCenterBtn');
+const notifDrawer = document.getElementById('notifDrawer');
+const closeNotifBtn = document.getElementById('closeNotifBtn');
+const clearNotifsBtn = document.getElementById('clearNotifsBtn');
+
+if (notifBtn && notifDrawer) {
+  notifBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    notifDrawer.classList.toggle('open');
+    const notifs = JSON.parse(localStorage.getItem('sx_notifications') || '[]');
+    notifs.forEach(n => n.read = true);
+    localStorage.setItem('sx_notifications', JSON.stringify(notifs));
+    const badgeEl = document.getElementById('notifCounter');
+    if (badgeEl) badgeEl.classList.remove('active');
+  });
+}
+
+if (closeNotifBtn && notifDrawer) {
+  closeNotifBtn.addEventListener('click', () => notifDrawer.classList.remove('open'));
+}
+
+if (clearNotifsBtn) {
+  clearNotifsBtn.addEventListener('click', () => {
+    localStorage.setItem('sx_notifications', JSON.stringify([]));
+    renderNotifications();
+  });
+}
+
+document.addEventListener('click', (e) => {
+  if (notifDrawer && !notifDrawer.contains(e.target) && e.target !== notifBtn) {
+    notifDrawer.classList.remove('open');
+  }
+});
+
+const STATUS = {
+  WAITING_FOR_CLIENT: { label: 'Waiting for Client', badge: 'badge-muted' },
+  CLIENT_JOINED:      { label: 'Client Joined',      badge: 'badge-cyan' },
+  PENDING:            { label: 'Pending Payment',     badge: 'badge-muted' },
+  LOCKED:             { label: 'Payment Locked 🔒',   badge: 'badge-gold' },
+  DELIVERED:          { label: 'Delivered 📦',        badge: 'badge-cyan' },
+  VERIFYING:          { label: 'Verifying ⏳',        badge: 'badge-amber' },
+  RELEASED:           { label: 'Payment Released ✅', badge: 'badge-green' },
+  DISPUTED:           { label: 'Disputed ⚠',          badge: 'badge-red' },
+};
+
+// ── Default Rich Deals for Immediate Interactive Experience ──
+function ensureDefaultDeals() {
+  let localDeals = JSON.parse(localStorage.getItem('sx_local_deals') || '[]');
+  if (!localDeals.length) {
+    localDeals = [
+      {
+        id: 'NX-89420-ROH',
+        deal_id: 'NX-89420-ROH',
+        unique_code: 'NEX-89420',
+        title: 'Logo & Brand Identity for Startup',
+        description: 'Complete vector identity, typography scale, Figma brand tokens & logo package.',
+        budget: 32000,
+        amount: 32000,
+        deadline: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0],
+        delivery_details: 'Figma link and ZIP asset package with SVG vector files.',
+        freelancer_name: 'Rohan Mehta',
+        freelancer_email: 'rohan@nexrow.io',
+        status: 'VERIFYING',
+        created_at: new Date(Date.now() - 3600000 * 2).toISOString()
+      },
+      {
+        id: 'NX-31502-PRI',
+        deal_id: 'NX-31502-PRI',
+        unique_code: 'NEX-31502',
+        title: 'Full Stack Web & Mobile App',
+        description: 'Responsive React frontend with Supabase real-time backend and secure payment vault.',
+        budget: 45000,
+        amount: 45000,
+        deadline: new Date(Date.now() + 86400000 * 14).toISOString().split('T')[0],
+        delivery_details: 'GitHub repository and live Vercel staging deployment.',
+        freelancer_name: 'Priya Patel',
+        freelancer_email: 'priya@nexrow.io',
+        status: 'LOCKED',
+        created_at: new Date(Date.now() - 86400000).toISOString()
+      }
+    ];
+    localStorage.setItem('sx_local_deals', JSON.stringify(localDeals));
+  }
+  return localDeals;
+}
+
+export async function initClientDashboard() {
+  renderNotifications();
+  const defaultLocal = ensureDefaultDeals();
+
+  // Handle active user email
+  try {
+    const { data } = await supabase.auth.getSession();
+    const sessionUser = data?.session?.user;
+    const localUser = JSON.parse(localStorage.getItem('sx_active_user') || 'null');
+    const user = sessionUser || localUser;
+    
+    if (user && user.email) {
+      const rawName = user.user_metadata?.name || user.name || user.email.split('@')[0];
+      const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+      const navEl = document.getElementById('navUser');
+      if (navEl) navEl.textContent = user.email;
+      const greetingEl = document.getElementById('dashGreeting');
+      if (greetingEl) greetingEl.textContent = `// Welcome back, ${formattedName}`;
+    }
+  } catch(e) {}
+
+  // Fetch from Supabase safely
+  let dbDeals = [];
+  try {
+    const res = await supabase.from('deals').select('*').order('created_at', { ascending: false });
+    if (res && res.data) {
+      dbDeals = res.data;
+    }
+  } catch(err) {
+    console.warn("Using offline fail-safe for deals:", err);
+  }
+
+  const loadSpinner = document.getElementById('loading');
+  if (loadSpinner) loadSpinner.style.display = 'none';
+
+  // Merge Supabase + LocalStorage deals seamlessly
+  const combinedDeals = [...(dbDeals || [])];
+  defaultLocal.forEach(ld => {
+    if (!combinedDeals.some(d => d.id === ld.id || d.unique_code === ld.unique_code || (d.title === ld.title && d.budget === ld.budget))) {
+      combinedDeals.push(ld);
+    }
+  });
+
+  const dealList = combinedDeals;
+  const activeDeals = dealList.filter(d => ['LOCKED','DELIVERED','VERIFYING','PENDING','WAITING_FOR_CLIENT'].includes(d.status));
+  const reviewDeals = dealList.filter(d => d.status === 'DELIVERED' || d.status === 'VERIFYING');
+  const completedDeals = dealList.filter(d => d.status === 'RELEASED');
+
+  const totalVaulted = dealList.reduce((sum, d) => sum + Number(d.amount || d.budget || 0), 0);
+  const vaultedEl = document.getElementById('statVaulted');
+  if (vaultedEl) vaultedEl.textContent = formatINR(totalVaulted);
+  const vaultTextEl = document.getElementById('vaultBalanceText');
+  if (vaultTextEl) vaultTextEl.textContent = formatINR(totalVaulted);
+  const activeEl = document.getElementById('statActive');
+  if (activeEl) activeEl.textContent = activeDeals.length;
+  const completedEl = document.getElementById('statCompleted');
+  if (completedEl) completedEl.textContent = completedDeals.length;
+
+  const renderList = (elementId, list) => {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (!list || !list.length) {
+      el.innerHTML = '<div class="card text-center" style="padding:3rem"><p style="color:var(--text3);font-family:\'JetBrains Mono\',monospace;font-size:0.85rem">No deals found in this category. Click "+ Create New Deal" to begin.</p></div>';
+      return;
+    }
+    el.innerHTML = list.map(d => {
+      const s = STATUS[d.status] || { label: d.status || 'Active', badge: 'badge-gold' };
+      const code = d.unique_code || (typeof d.id === 'string' ? d.id.slice(0,8) : 'NEX-' + Math.floor(10000 + Math.random()*90000));
+      const flName = d.freelancer_name || 'Assigned Freelancer';
+      const wtUrl = `how-it-works.html?fname=${encodeURIComponent(d.freelancer_name || '')}&femail=${encodeURIComponent(d.freelancer_email || '')}&dealId=${d.id || ''}&budget=${d.budget || d.amount || ''}&title=${encodeURIComponent(d.title || '')}&desc=${encodeURIComponent(d.description || '')}`;
+      return `
+        <div class="deal-card" style="position:relative">
+          <a href="status.html?id=${d.id}" style="text-decoration:none;color:inherit;display:block">
+            <div class="deal-card-top">
+              <div>
+                <div class="deal-card-id">${code}</div>
+                <div class="deal-card-title">${d.title || 'Escrow Project'}</div>
+              </div>
+              <span class="badge ${s.badge}">${s.label}</span>
+            </div>
+            <div class="deal-card-desc">${d.description || 'No description provided'}</div>
+            <div style="font-size:0.75rem;color:var(--text3);margin:0.4rem 0;font-family:'DM Mono',monospace">
+              👤 Freelancer: <strong style="color:var(--gold)">${flName}</strong>
+            </div>
+            <div class="deal-card-bottom">
+              <div class="deal-card-amount">${formatINR(d.budget || d.amount || 0)}</div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--gold-light)">${d.status === 'VERIFYING' || d.status === 'DELIVERED' ? 'Verify OTP Release →' : 'Track Escrow State →'}</span>
+            </div>
+          </a>
+          <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:0.6rem">
+            <a href="${wtUrl}" class="btn btn-outline btn-sm" style="font-size:0.7rem;padding:0.25rem 0.65rem">🚀 Open Interactive Walkthrough →</a>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  renderList('list-all', dealList);
+  renderList('list-review', reviewDeals);
+  renderList('list-completed', completedDeals);
+}
+
+// ── Tab Switching on Client Sidebar ──
+const tabIds = ['all', 'review', 'completed', 'vault'];
+tabIds.forEach(tId => {
+  const btn = document.getElementById('tab' + tId.charAt(0).toUpperCase() + tId.slice(1));
+  if (btn) {
+    btn.addEventListener('click', () => {
+      tabIds.forEach(t => {
+        const b = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        const p = document.getElementById(`panel-${t}`);
+        if (b) b.classList.remove('active');
+        if (p) p.classList.remove('active');
+      });
+      btn.classList.add('active');
+      document.getElementById(`panel-${tId}`)?.classList.add('active');
+    });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────
+// AI VOICE & TEXT MODAL LOGIC (Triggered by "+ Create New Deal")
+// ─────────────────────────────────────────────────────────────────
+const aiDealModal = document.getElementById('aiDealModal');
+const openModalBtn = document.getElementById('openCreateDealBtn');
+const closeModalBtn = document.getElementById('closeAiModalBtn');
+
+const modalState = {
+  step: 0,
+  deal: { title: '', description: '', deadline: '', budget: 0, deliveryDetails: '' },
+  speechSynth: window.speechSynthesis || null,
+  recognition: null
+};
+
+const MODAL_STEPS = [
+  {
+    key: 'title',
+    question: "Hello! What is your **Project Title**? (e.g. Logo Design, Web App, Mobile App)",
+    speak: "Hello! What is your Project Title?",
+    chips: ["🎨 Logo & Brand Identity", "💻 Full Stack Web App", "📱 Mobile App in Flutter", "✨ UI/UX Figma Design"],
+    parse: (v) => v.replace(/^[🎨💻📱✨]\s*/, '').trim()
+  },
+  {
+    key: 'description',
+    question: "Great! Can you give a brief **Scope or Description**?",
+    speak: "Great! Can you give a brief Scope or Description?",
+    chips: ["Complete responsive web app with Supabase authentication", "Minimalist vector logo package with brand color palette", "High-fidelity clickable Figma mobile app prototype"],
+    parse: (v) => v.trim()
+  },
+  {
+    key: 'deadline',
+    question: "When is the **Expected Deadline**?",
+    speak: "When is the Expected Deadline?",
+    chips: ["⚡ In 3 Days", "📅 In 1 Week", "🗓️ In 2 Weeks", "📅 In 1 Month"],
+    parse: (v) => {
+      const d = new Date();
+      if (v.includes('3 Day')) d.setDate(d.getDate() + 3);
+      else if (v.includes('1 Week') || v.includes('7 day')) d.setDate(d.getDate() + 7);
+      else if (v.includes('2 Week')) d.setDate(d.getDate() + 14);
+      else d.setDate(d.getDate() + 7);
+      return d.toISOString().split('T')[0];
+    }
+  },
+  {
+    key: 'budget',
+    question: "What is your **Budget in INR (₹)** to lock in escrow?",
+    speak: "What is your Budget in Indian Rupees to lock in escrow?",
+    chips: ["₹10,800", "₹25,000", "₹32,000", "₹50,000"],
+    parse: (v) => {
+      const num = parseFloat(v.replace(/[^0-9.]/g, ''));
+      return isNaN(num) || num <= 0 ? 32000 : num;
+    }
+  },
+  {
+    key: 'deliveryDetails',
+    question: "Lastly, how will delivery proof be submitted?",
+    speak: "Lastly, how will delivery proof be submitted?",
+    chips: ["🔗 GitHub Repo & Live URL", "🎨 Figma Link & Assets", "📦 ZIP Archive & Docs"],
+    parse: (v) => v.trim()
+  }
+];
+
+function modalSpeak(txt) {
+  if (!modalState.speechSynth) return;
+  try {
+    modalState.speechSynth.cancel();
+    const u = new SpeechSynthesisUtterance(txt);
+    u.rate = 1.05;
+    modalState.speechSynth.speak(u);
+  } catch(e) {}
+}
+
+function updateModalPreview() {
+  const d = modalState.deal;
+  document.getElementById('modalPvTitle').textContent = d.title || 'Untitled Escrow Project';
+  document.getElementById('modalPvDesc').textContent = d.description || '// Scope will be extracted by AI...';
+  document.getElementById('modalPvBudget').textContent = d.budget > 0 ? `₹${d.budget.toLocaleString('en-IN')}` : '₹0';
+  document.getElementById('modalPvDeadline').textContent = d.deadline ? new Date(d.deadline).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'Not Set';
+}
+
+// Category-specific description chips generator
+function getModalCategoryChips(title = '') {
+  const t = (title || '').toLowerCase();
+  if (t.includes('logo') || t.includes('brand') || t.includes('identity')) {
+    return [
+      "🎨 3 Modern minimalist vector logo concepts with dark & light variations",
+      "📘 Complete brand guidelines book with color codes & typography scale",
+      "📦 Full vector asset kit in SVG, high-res PNG, AI source & favicon"
+    ];
+  }
+  if (t.includes('web') || t.includes('react') || t.includes('node') || t.includes('full stack') || t.includes('frontend')) {
+    return [
+      "💻 Full responsive React/Next.js frontend with Node.js REST API & Supabase",
+      "⚡ High-converting business landing page with SEO & lead capture forms",
+      "🛒 E-commerce web app with product catalog, cart & Razorpay checkout"
+    ];
+  }
+  if (t.includes('mobile') || t.includes('flutter') || t.includes('react native') || t.includes('ios') || t.includes('android') || t.includes('app')) {
+    return [
+      "📱 Interactive 15-screen mobile app in Flutter for iOS & Android",
+      "⚡ Cross-platform React Native app with biometric login & push notifications",
+      "🚀 Native Android/iOS app with offline database sync & camera integration"
+    ];
+  }
+  if (t.includes('ui') || t.includes('ux') || t.includes('figma') || t.includes('design')) {
+    return [
+      "✨ Complete Figma design system with auto-layout & reusable components",
+      "📱 High-fidelity clickable interactive mobile app prototype in Figma",
+      "🎯 User journey maps, UX wireframes & developer-ready design tokens"
+    ];
+  }
+  if (t.includes('digital painting') || t.includes('painting') || t.includes('concept art') || t.includes('illustration') || t.includes('art')) {
+    return [
+      "🎨 Hyper-realistic digital character painting in 4K resolution",
+      "🖼️ Custom fantasy concept artwork with detailed lighting & layered PSD",
+      "✨ High-resolution printable digital illustration up to 300 DPI"
+    ];
+  }
+  if (t.includes('sketch') || t.includes('pencil') || t.includes('drawing') || t.includes('portrait')) {
+    return [
+      "✏️ Realistic graphite & charcoal portrait sketch on archival paper",
+      "🏛️ Handmade architectural pencil drawing with high-resolution scan",
+      "🖼️ Custom couple/family portrait sketch delivered with protective packaging"
+    ];
+  }
+  if (t.includes('wordpress') || t.includes('wp') || t.includes('cms')) {
+    return [
+      "🌐 Custom Elementor/Gutenberg WordPress business website with 5 pages",
+      "🛍️ WooCommerce online store setup with payment gateway & shipping rules",
+      "⚡ WordPress site speed optimization with 95+ Google PageSpeed score"
+    ];
+  }
+  if (t.includes('video') || t.includes('editing') || t.includes('reels') || t.includes('motion')) {
+    return [
+      "🎬 Cinematic 4K YouTube video editing with sound effects & color grading",
+      "🔥 15 dynamic Instagram Reels / TikToks with subtitles & viral hooks",
+      "✨ 2D motion graphics logo animation and explainer video in After Effects"
+    ];
+  }
+  if (t.includes('pot') || t.includes('ceramic') || t.includes('pottery') || t.includes('clay')) {
+    return [
+      "🏺 Handcrafted ceramic planter pot with customized hand-painted glaze",
+      "🪴 Set of 3 artistic decorative clay pots with terracotta floral motifs",
+      "🌿 Custom glazed bonsai ceramic pot delivered safely with foam packaging"
+    ];
+  }
+  if (t.includes('backend') || t.includes('api') || t.includes('database') || t.includes('express')) {
+    return [
+      "⚙️ Scalable Node.js / Express REST API with JWT authentication & MongoDB",
+      "🚀 High-performance microservice architecture with Redis caching & Docker",
+      "🔒 Secure PostgreSQL database schema design with automated backups"
+    ];
+  }
+  return [
+    "📦 Complete deliverable package with source files and documentation",
+    "⚡ Fully functional custom build with 1 round of revisions included",
+    "🚀 Production-ready assets and deployment walkthrough"
+  ];
+}
+
+function modalPresentStep() {
+  const stream = document.getElementById('modalChatStream');
+  if (modalState.step < MODAL_STEPS.length) {
+    const s = MODAL_STEPS[modalState.step];
+    document.getElementById('modalStepBadge').textContent = `Step ${modalState.step + 1} of ${MODAL_STEPS.length}`;
+    
+    const bubble = document.createElement('div');
+    bubble.style.background = 'rgba(255,255,255,0.05)';
+    bubble.style.border = '1px solid rgba(245,158,11,0.2)';
+    bubble.style.padding = '0.75rem 1rem';
+    bubble.style.borderRadius = '10px';
+    bubble.style.fontSize = '0.82rem';
+    bubble.style.color = '#fff';
+    bubble.innerHTML = `<div>${s.question}</div>`;
+
+    // Pick dynamic category-specific chips!
+    let activeChips = s.chips;
+    if (s.key === 'description') {
+      activeChips = getModalCategoryChips(modalState.deal.title);
+    } else if (s.key === 'deliveryDetails') {
+      const t = (modalState.deal.title || '').toLowerCase();
+      if (t.includes('logo') || t.includes('brand') || t.includes('ui') || t.includes('figma')) {
+        activeChips = ["🎨 Figma Link & SVG/AI Asset Package", "📦 ZIP Archive with Vector Exports", "🔗 Google Drive Folder"];
+      } else if (t.includes('web') || t.includes('app') || t.includes('mobile') || t.includes('backend')) {
+        activeChips = ["🔗 GitHub Repository & Live Vercel Link", "📱 APK/IPA Build + Source Code ZIP", "🚀 Production URL"];
+      } else if (t.includes('sketch') || t.includes('pot') || t.includes('ceramic') || t.includes('painting')) {
+        activeChips = ["📦 High-Res 300 DPI Scans + Courier", "🖼️ Layered PSD / TIFF File", "🚚 Insured Courier Delivery"];
+      }
+    }
+
+    if (activeChips && activeChips.length) {
+      const chipsBox = document.createElement('div');
+      chipsBox.style.display = 'flex';
+      chipsBox.style.flexWrap = 'wrap';
+      chipsBox.style.gap = '0.35rem';
+      chipsBox.style.marginTop = '0.5rem';
+      activeChips.forEach(c => {
+        const chipBtn = document.createElement('button');
+        chipBtn.className = 'btn btn-outline btn-sm';
+        chipBtn.style.fontSize = '0.68rem';
+        chipBtn.style.padding = '0.25rem 0.6rem';
+        chipBtn.style.borderColor = 'rgba(245,158,11,0.3)';
+        chipBtn.style.color = 'var(--gold-bright)';
+        chipBtn.textContent = c;
+        chipBtn.onclick = () => handleModalAnswer(c);
+        chipsBox.appendChild(chipBtn);
+      });
+      bubble.appendChild(chipsBox);
+    }
+
+    stream.appendChild(bubble);
+    stream.scrollTop = stream.scrollHeight;
+    modalSpeak(s.speak);
+  } else {
+    document.getElementById('modalStepBadge').textContent = `✓ Review Ready`;
+    const bubble = document.createElement('div');
+    bubble.style.background = 'rgba(16,185,129,0.1)';
+    bubble.style.border = '1px solid rgba(16,185,129,0.3)';
+    bubble.style.padding = '0.75rem 1rem';
+    bubble.style.borderRadius = '10px';
+    bubble.style.fontSize = '0.82rem';
+    bubble.style.color = 'var(--green)';
+    bubble.innerHTML = `🎉 <strong>Deal configured!</strong> Click "Create Deal" to view matching verified freelancers and launch your workspace.`;
+    stream.appendChild(bubble);
+    stream.scrollTop = stream.scrollHeight;
+    modalSpeak("All project details are set! Click Create Deal to view matched freelancers.");
+  }
+}
+
+function handleModalAnswer(raw) {
+  const txt = raw.trim();
+  if (!txt) return;
+
+  const stream = document.getElementById('modalChatStream');
+  const userB = document.createElement('div');
+  userB.style.background = 'var(--gold-gradient)';
+  userB.style.color = '#000';
+  userB.style.fontWeight = '600';
+  userB.style.padding = '0.6rem 0.9rem';
+  userB.style.borderRadius = '10px';
+  userB.style.fontSize = '0.82rem';
+  userB.style.alignSelf = 'flex-end';
+  userB.textContent = txt;
+  stream.appendChild(userB);
+
+  document.getElementById('modalInput').value = '';
+
+  if (modalState.step < MODAL_STEPS.length) {
+    const s = MODAL_STEPS[modalState.step];
+    modalState.deal[s.key] = s.parse(txt);
+    updateModalPreview();
+    modalState.step++;
+    setTimeout(() => modalPresentStep(), 400);
+  } else {
+    document.getElementById('modalConfirmBtn').click();
+  }
+}
+
+if (openModalBtn && aiDealModal) {
+  openModalBtn.addEventListener('click', () => {
+    aiDealModal.classList.add('open');
+    document.getElementById('modalStageInterview').style.display = 'block';
+    document.getElementById('modalStageFreelancers').classList.remove('show');
+    modalState.step = 0;
+    modalState.deal = { title: '', description: '', deadline: '', budget: 0, deliveryDetails: '' };
+    document.getElementById('modalChatStream').innerHTML = '';
+    updateModalPreview();
+    modalPresentStep();
+  });
+}
+
+if (closeModalBtn && aiDealModal) {
+  closeModalBtn.addEventListener('click', () => {
+    aiDealModal.classList.remove('open');
+    if (modalState.speechSynth) modalState.speechSynth.cancel();
+  });
+}
+
+// Modal Voice Mic Recognition
+const modalMicBtn = document.getElementById('modalMicBtn');
+if (modalMicBtn) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition) {
+    modalState.recognition = new SpeechRecognition();
+    modalState.recognition.lang = 'en-IN';
+    modalState.recognition.onstart = () => {
+      modalMicBtn.style.background = '#ef4444';
+      modalMicBtn.style.color = '#fff';
+      document.getElementById('modalAiStatus').textContent = '🎙️ Listening...';
+    };
+    modalState.recognition.onresult = (e) => {
+      const text = e.results[0][0].transcript;
+      if (text) handleModalAnswer(text);
+    };
+    modalState.recognition.onend = () => {
+      modalMicBtn.style.background = 'var(--gold-dim)';
+      modalMicBtn.style.color = 'var(--gold)';
+      document.getElementById('modalAiStatus').textContent = '● AI Ready';
+    };
+  }
+  modalMicBtn.addEventListener('click', () => {
+    if (modalState.recognition) {
+      modalState.recognition.start();
+    } else {
+      alert("Please type in the input box (speech recognition not supported).");
+    }
+  });
+}
+
+document.getElementById('modalSendBtn')?.addEventListener('click', () => {
+  handleModalAnswer(document.getElementById('modalInput').value);
+});
+
+document.getElementById('modalInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    handleModalAnswer(e.target.value);
+  }
+});
+
+// Modal Confirm & Show Matched Freelancers with Celebration
+document.getElementById('modalConfirmBtn')?.addEventListener('click', () => {
+  const d = modalState.deal;
+  const title = d.title || 'Custom Escrow Project';
+  const desc = d.description || 'Verified escrow milestone deliverables.';
+  const budget = d.budget > 0 ? d.budget : 32000;
+  const deadline = d.deadline || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
+
+  const chars = '0123456789';
+  let code = '';
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  const uniqueCode = 'NEX-' + code;
+  const dealId = 'NX-' + Date.now().toString(36).toUpperCase();
+
+  // Find matched freelancers based on title & desc
+  const matched = findMatchingFreelancers(title, desc);
+
+  // Switch to Stage 2: Matched Freelancers View with Confetti Animation!
+  document.getElementById('modalStageInterview').style.display = 'none';
+  const stageFl = document.getElementById('modalStageFreelancers');
+  stageFl.classList.add('show');
+  document.getElementById('modalGeneratedCode').textContent = uniqueCode;
+
+  // Trigger celebration confetti
+  launchConfettiCelebration();
+
+  modalSpeak(`Congratulations! Your deal is created with code ${uniqueCode}. Please select a verified freelancer below to launch your live walkthrough!`);
+
+  const listContainer = document.getElementById('modalFreelancersList');
+  listContainer.innerHTML = matched.map((f, idx) => `
+    <div class="fl-stagger-card" style="animation-delay:${idx * 0.12}s;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem;transition:all 0.25s" onmouseover="this.style.borderColor='var(--gold)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)'">
+      <div style="display:flex;align-items:center;gap:0.85rem">
+        <div style="width:46px;height:46px;border-radius:50%;background:var(--gold-dim);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-weight:bold;color:var(--gold);font-size:1.2rem;box-shadow:0 0 15px rgba(245,158,11,0.2)">
+          ${f.name.charAt(0)}
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <strong style="font-size:1.02rem;color:var(--text)">${f.name}</strong>
+            <span class="badge badge-cyan" style="font-size:0.65rem">${f.domain}</span>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text2);margin-top:0.15rem">${f.bio}</div>
+          <div style="font-size:0.72rem;color:var(--text3);margin-top:0.25rem;font-family:'DM Mono',monospace">
+            ${f.rating} · ${f.projects} Projects · 📍 ${f.location} · <span style="color:var(--gold-bright);font-weight:700">${f.rate}</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-gold btn-sm select-modal-fl-btn" data-fid="${f.id}" data-fname="${f.name}" data-femail="${f.email}" style="padding:0.5rem 1.1rem;font-size:0.8rem;box-shadow:0 4px 15px rgba(245,158,11,0.3)">
+        🚀 Start Escrow with ${f.name.split(' ')[0]} →
+      </button>
+    </div>
+  `).join('');
+
+  // Handle Freelancer selection
+  listContainer.querySelectorAll('.select-modal-fl-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const selectedFlName = btn.dataset.fname;
+      const selectedFlEmail = btn.dataset.femail;
+      const fid = btn.dataset.fid;
+
+      const newDeal = {
+        id: dealId,
+        deal_id: dealId,
+        unique_code: uniqueCode,
+        title,
+        description: desc,
+        budget,
+        amount: budget,
+        deadline,
+        delivery_details: d.deliveryDetails || 'GitHub link & Live staging deployment',
+        freelancer_name: selectedFlName,
+        freelancer_email: selectedFlEmail,
+        status: 'LOCKED',
+        created_at: new Date().toISOString()
+      };
+
+      // Save into Supabase
+      try {
+        await supabase.from('deals').insert({
+          deal_id: dealId, unique_code: uniqueCode, title, description: desc, deadline, budget, delivery_details: newDeal.delivery_details,
+          freelancer_name: selectedFlName, freelancer_email: selectedFlEmail,
+          status: 'LOCKED'
+        });
+      } catch(err) {}
+
+      const localDeals = JSON.parse(localStorage.getItem('sx_local_deals') || '[]');
+      localDeals.unshift(newDeal);
+      localStorage.setItem('sx_local_deals', JSON.stringify(localDeals));
+
+      // Add notification
+      const notifs = JSON.parse(localStorage.getItem('sx_notifications') || '[]');
+      notifs.unshift({
+        id: 'n-' + Date.now(),
+        title: 'Freelancer Assigned',
+        message: `${selectedFlName} assigned to ${title} (₹${budget.toLocaleString('en-IN')}).`,
+        icon: '🤝',
+        badge: 'Assigned',
+        time: new Date().toISOString(),
+        read: false
+      });
+      localStorage.setItem('sx_notifications', JSON.stringify(notifs));
+
+      aiDealModal.classList.remove('open');
+      initClientDashboard();
+
+      // Launch how-it-works walkthrough with the exact freelancer!
+      window.location.href = `how-it-works.html?fid=${fid}&fname=${encodeURIComponent(selectedFlName)}&femail=${encodeURIComponent(selectedFlEmail)}&dealId=${dealId}&budget=${budget}&title=${encodeURIComponent(title)}&desc=${encodeURIComponent(desc)}`;
+    };
+  });
+});
+
+// Run automatically on load
+initClientDashboard();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initClientDashboard);
+}
+</script>
+
+<!-- SupremeX / Nexrow Chat Widget -->
+<script type="module" src="../js/chat-widget.js"></script>
+<script type="module">
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  try {
+    if (window.supabase && window.supabase.auth) {
+      await window.supabase.auth.signOut();
+    }
+  } catch(e) {}
+  const isInPages = window.location.pathname.includes('/pages/');
+  window.location.replace(isInPages ? '../index.html' : 'index.html');
+});
+</script>
+</body>
+</html>

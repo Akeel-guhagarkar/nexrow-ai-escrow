@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow — Autonomous AI Agent Escrow Demo (Judges Showcase)</title>
+<link rel="stylesheet" href="../css/style.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --gold: #f59e0b;
+    --gold-bright: #fbbf24;
+    --gold-dim: rgba(245,158,11,0.12);
+    --gold-dim2: rgba(245,158,11,0.06);
+    --cyan: #38bdf8;
+    --cyan-dim: rgba(56,189,248,0.12);
+    --green: #10b981;
+    --green-dim: rgba(16,185,129,0.12);
+    --purple: #a855f7;
+    --purple-dim: rgba(168,85,247,0.12);
+    --border: rgba(255,255,255,0.08);
+    --border-gold: rgba(245,158,11,0.3);
+    --card: rgba(17,24,39,0.95);
+    --surface: #0b1120;
+    --text: #f8fafc;
+    --text2: #94a3b8;
+    --text3: #64748b;
+  }
+
+  .demo-container {
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 5rem;
+  }
+
+  /* Judge Showcase Top Hero */
+  .judge-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(168,85,247,0.2));
+    border: 1px solid var(--gold);
+    border-radius: 30px;
+    padding: 0.4rem 1.1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--gold-bright);
+    margin-bottom: 0.8rem;
+    box-shadow: 0 0 20px rgba(245,158,11,0.25);
+  }
+  .judge-hero-title {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    line-height: 1.15;
+    margin-bottom: 0.8rem;
+    background: linear-gradient(135deg, #fff 40%, var(--gold-bright) 75%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Demo Master Control Bar */
+  .demo-control-bar {
+    background: var(--surface);
+    border: 1px solid var(--border-gold);
+    border-radius: 16px;
+    padding: 1.2rem 1.8rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+  }
+  .playback-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .ctrl-btn {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.65rem 1.4rem;
+    border-radius: 10px;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.25s ease;
+  }
+  .ctrl-btn-primary {
+    background: var(--gold-gradient);
+    color: #000;
+    box-shadow: 0 4px 20px rgba(245,158,11,0.4);
+  }
+  .ctrl-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(245,158,11,0.6);
+  }
+  .ctrl-btn-outline {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .ctrl-btn-outline:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: var(--gold);
+  }
+
+  /* Timeline Stage Indicator */
+  .timeline-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.9rem 1.2rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    gap: 1rem;
+  }
+  .t-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text3);
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+  .t-step.active {
+    background: var(--gold-dim);
+    color: var(--gold-bright);
+    border: 1px solid var(--gold);
+    font-weight: 700;
+    box-shadow: 0 0 15px rgba(245,158,11,0.3);
+  }
+  .t-step.done {
+    color: var(--green);
+  }
+
+  /* 2-Column Main Arena Grid */
+  .arena-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+  }
+  @media (max-width: 1024px) {
+    .arena-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Chat & Negotiation Simulator Card */
+  .simulator-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    height: 640px;
+    overflow: hidden;
+  }
+  .sim-header {
+    background: rgba(11,17,32,0.95);
+    border-bottom: 1px solid var(--border);
+    padding: 1.1rem 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sim-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  /* Live Chat Messages Stream */
+  .sim-chat-stream {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: radial-gradient(circle at top right, rgba(245,158,11,0.03), transparent 70%);
+  }
+  .msg-bubble {
+    max-width: 85%;
+    padding: 0.95rem 1.2rem;
+    border-radius: 14px;
+    font-size: 0.86rem;
+    line-height: 1.55;
+    animation: bubbleIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  @keyframes bubbleIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .msg-agent {
+    align-self: flex-start;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.25);
+    color: var(--text);
+    border-top-left-radius: 4px;
+  }
+  .msg-freelancer {
+    align-self: flex-end;
+    background: rgba(56,189,248,0.1);
+    border: 1px solid rgba(56,189,248,0.3);
+    color: var(--text);
+    border-top-right-radius: 4px;
+  }
+  .msg-system {
+    align-self: center;
+    background: rgba(16,185,129,0.08);
+    border: 1px dashed rgba(16,185,129,0.4);
+    color: var(--green);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    text-align: center;
+    max-width: 92%;
+  }
+
+  .sender-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .sb-agent { color: var(--gold-bright); }
+  .sb-freelancer { color: var(--cyan); }
+
+  /* Right Action Telemetry & Multi-Sig Vault Panel */
+  .telemetry-card {
+    background: var(--card);
+    border: 1px solid var(--border-gold);
+    border-radius: 16px;
+    padding: 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+  }
+  .vault-monitor-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .vault-lock-glow {
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(245,158,11,0.25), transparent 70%);
+  }
+
+  /* Live Terminal Feed */
+  .agent-terminal {
+    background: #030712;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: #a7f3d0;
+    height: 180px;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+  .term-log {
+    margin-bottom: 0.3rem;
+  }
+  .term-tag { color: var(--gold-bright); font-weight: 700; }
+  .term-hash { color: var(--cyan); }
+
+  /* Milestone Visual Payout Release Tracker */
+  .milestone-stepper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .ms-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s;
+  }
+  .ms-row.active {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    box-shadow: 0 0 15px rgba(245,158,11,0.25);
+  }
+  .ms-row.released {
+    background: rgba(16,185,129,0.08);
+    border-color: rgba(16,185,129,0.4);
+  }
+
+  /* Judge Metric Callouts */
+  .judge-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  /* Mobile Responsiveness for Demo Arena */
+  @media (max-width: 768px) {
+    .demo-container { padding: 1rem 0.8rem 3rem; }
+    .judge-hero-title { font-size: 1.6rem !important; }
+    .demo-control-bar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.85rem;
+      padding: 1rem;
+    }
+    .playback-buttons {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .timeline-bar {
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      padding: 0.6rem 0.8rem;
+      gap: 0.4rem;
+    }
+    .timeline-bar::-webkit-scrollbar { display: none; }
+    .t-step {
+      font-size: 0.72rem;
+      padding: 0.35rem 0.65rem;
+    }
+    .simulator-card {
+      height: 500px;
+    }
+    .sim-chat-stream {
+      padding: 1rem;
+      gap: 0.75rem;
+    }
+    .msg-bubble {
+      max-width: 95%;
+      padding: 0.8rem 1rem;
+      font-size: 0.82rem;
+    }
+    .telemetry-card {
+      padding: 1.2rem;
+    }
+  }
+
+  /* Deal Created Popup Modal */
+  .deal-created-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(3,7,18,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .deal-created-modal-overlay.open {
+    display: flex;
+    animation: modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  .deal-created-modal-box {
+    background: var(--card);
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(245,158,11,0.2) inset;
+    width: 100%;
+    max-width: 860px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    padding: 2.2rem;
+  }
+  .deal-modal-close {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text3);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .deal-modal-close:hover { background: rgba(239,68,68,0.2); color: #ef4444; border-color: #ef4444; }
+</style>
+</head>
+<body class="fade-in">
+
+<!-- Canvas for Real Confetti Particles -->
+<canvas id="confettiCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:10000"></canvas>
+
+<!-- ─────────────────────────────────────────────────────────────────
+     POPUP MODAL: DEAL CREATED & MATCHED FREELANCERS (From user screenshot)
+────────────────────────────────────────────────────────────────── -->
+<div class="deal-created-modal-overlay" id="dealCreatedModal">
+  <div class="deal-created-modal-box">
+    <button class="deal-modal-close" id="closeDealCreatedModalBtn">✕</button>
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="font-size:2.8rem;margin-bottom:0.3rem">🎉</div>
+      <h2 style="font-size:1.8rem;font-family:'Outfit',sans-serif;margin:0 0 0.3rem;color:var(--text)">Deal Created &amp; Escrow Code Generated!</h2>
+      
+      <!-- Shimmering Animated Code Box -->
+      <div>
+        <div class="celebrate-code-box" id="demoGeneratedCode">
+          NEX-49105
+        </div>
+      </div>
+
+      <p style="font-size:0.88rem;color:var(--text2);margin:0.4rem 0 1.2rem">Select any verified freelancer below to launch your live workspace walkthrough simulation:</p>
+    </div>
+
+    <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--gold-bright);margin-bottom:0.8rem">
+      🎯 MATCHED FREELANCERS FOR YOUR PROJECT:
+    </div>
+    
+    <div id="demoFreelancersList" style="display:flex;flex-direction:column;gap:0.85rem;max-height:380px;overflow-y:auto;padding-right:0.4rem">
+      <!-- Rendered dynamically with live Start Escrow buttons -->
+    </div>
+  </div>
+</div>
+
+<nav class="topnav">
+  <a href="../index.html" class="nav-logo">Nex<span>row</span> <span style="font-size:0.7rem;font-weight:600;color:var(--gold-bright);margin-left:0.4rem;padding:0.15rem 0.5rem;background:var(--gold-dim);border-radius:12px;border:1px solid rgba(245,158,11,0.3)">AI AUTONOMOUS DEMO</span></a>
+  <div class="nav-right">
+    <a href="how-it-works.html" class="nav-link" style="font-size:0.78rem">🚀 Walkthrough</a>
+    <a href="client-dashboard.html" class="nav-link" style="font-size:0.78rem">Client Portal</a>
+    <a href="freelancer-dashboard.html" class="nav-link" style="font-size:0.78rem">Freelancer Portal</a>
+    <a href="create-deal.html" class="btn btn-gold btn-sm" style="font-size:0.75rem;padding:0.35rem 0.85rem">🎙️ Voice Model</a>
+  </div>
+</nav>
+
+<div class="demo-container">
+
+  <!-- Judge Header Banner -->
+  <div class="fade-up" style="text-align:center;margin-bottom:2rem">
+    <div class="judge-hero-badge">
+      <span>🏆</span> HACKATHON &amp; JUDGE DEMONSTRATION MODE
+    </div>
+    <h1 class="judge-hero-title">100% Autonomous AI Agent Escrow Lifecycle</h1>
+    <p style="font-size:0.95rem;color:var(--text2);max-width:720px;margin:0 auto;line-height:1.6">
+      Watch our autonomous AI agents execute client scoping, freelancer price negotiation, Algorand multi-sig vault locking, automated code QA inspection, and milestone releases in real time!
+    </p>
+  </div>
+
+  <!-- Master Control Bar for Judges -->
+  <div class="demo-control-bar fade-up">
+    <div class="playback-buttons">
+      <button class="ctrl-btn ctrl-btn-primary" id="playBtn">
+        <span id="playIcon">▶</span> <span id="playLabel">Start Autonomous Demo</span>
+      </button>
+      <button class="ctrl-btn ctrl-btn-outline" id="stepBtn">
+        <span>⏭</span> Next Step
+      </button>
+      <button class="ctrl-btn ctrl-btn-outline" id="restartBtn">
+        <span>🔄</span> Reset
+      </button>
+      <button class="btn btn-gold btn-sm" id="openMatchedModalBtn" style="padding:0.5rem 1rem;font-size:0.8rem;box-shadow:0 4px 15px rgba(245,158,11,0.3)">
+        🚀 View Matched Freelancers &amp; Code →
+      </button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.75rem">
+      <span style="color:var(--text3)">SPEED:</span>
+      <button class="btn btn-outline btn-sm speed-btn active" data-speed="1" style="padding:0.25rem 0.65rem">1x Normal</button>
+      <button class="btn btn-outline btn-sm speed-btn" data-speed="2" style="padding:0.25rem 0.65rem">2x Fast</button>
+      <button class="btn btn-outline btn-sm speed-btn" data-speed="0.2" style="padding:0.25rem 0.65rem">⚡ Turbo</button>
+    </div>
+  </div>
+
+  <!-- Timeline Stages Bar -->
+  <div class="timeline-bar fade-up">
+    <div class="t-step active" id="st1"><span>1️⃣</span> AI Scoping</div>
+    <span>➔</span>
+    <div class="t-step" id="st2"><span>2️⃣</span> Agent Match &amp; Negotiation</div>
+    <span>➔</span>
+    <div class="t-step" id="st3"><span>3️⃣</span> Multi-Sig Vault Locked</div>
+    <span>➔</span>
+    <div class="t-step" id="st4"><span>4️⃣</span> Code QA Inspection</div>
+    <span>➔</span>
+    <div class="t-step" id="st5"><span>5️⃣</span> Milestone Payout Release</div>
+  </div>
+
+  <!-- Main Arena Grid: Chat Negotiation on Left, Vault & Telemetry on Right -->
+  <div class="arena-grid">
+    
+    <!-- LEFT: AI Agent & Freelancer Negotiation Stream -->
+    <div class="simulator-card fade-up">
+      <div class="sim-header">
+        <div class="sim-title">
+          <span style="font-size:1.3rem">🤖</span>
+          <span>Live AI Agent ↔ Freelancer Negotiation Arena</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--green);display:flex;align-items:center;gap:0.4rem" id="agentStatusBadge">
+          <span class="status-dot-pulse"></span> AI AGENT READY
+        </div>
+      </div>
+
+      <!-- Live Chat Stream -->
+      <div class="sim-chat-stream" id="chatStream">
+        <!-- Messages rendered dynamically with realistic typing animation -->
+      </div>
+    </div>
+
+    <!-- RIGHT: Multi-Sig Vault, Algorand Telemetry & Milestone Releases -->
+    <div class="telemetry-card fade-up">
+      
+      <!-- Vault Monitor -->
+      <div class="vault-monitor-box">
+        <div class="vault-lock-glow"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold-bright);text-transform:uppercase">// Safe Escrow Vault</span>
+          <span class="badge badge-gold" id="vaultBadge">INITIALIZING</span>
+        </div>
+        <div style="font-family:'Outfit',sans-serif;font-size:1.9rem;font-weight:800;color:var(--text);margin-bottom:0.3rem" id="vaultAmountText">
+          ₹32,000.00
+        </div>
+        <div style="font-size:0.75rem;color:var(--text2)">
+          Protected by Escrow Vault Contract <code id="algoTxHash" style="color:var(--cyan)">ALGO-NX-INIT</code>
+        </div>
+      </div>
+
+      <!-- Live Milestone Payout Tracker -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text3);text-transform:uppercase;margin-bottom:0.6rem">
+          // Step-by-Step Payment Schedule (30% / 40% / 30%)
+        </div>
+        <div class="milestone-stepper">
+          <div class="ms-row" id="ms1Row">
+            <div>
+              <strong style="font-size:0.85rem;color:var(--text)">Step 1 · Initial Logo Concepts (30%)</strong>
+              <div style="font-size:0.7rem;color:var(--text3)">₹9,600 · Released after AI quality check</div>
+            </div>
+            <span class="badge badge-muted" id="ms1Badge">Pending</span>
+          </div>
+
+          <div class="ms-row" id="ms2Row">
+            <div>
+              <strong style="font-size:0.85rem;color:var(--text)">Step 2 · Brand Guidelines & Colors (40%)</strong>
+              <div style="font-size:0.7rem;color:var(--text3)">₹12,800 · Released with client approval</div>
+            </div>
+            <span class="badge badge-muted" id="ms2Badge">Pending</span>
+          </div>
+
+          <div class="ms-row" id="ms3Row">
+            <div>
+              <strong style="font-size:0.85rem;color:var(--text)">Step 3 · Final Assets & Handover (30%)</strong>
+              <div style="font-size:0.7rem;color:var(--text3)">₹9,600 · Complete project handover</div>
+            </div>
+            <span class="badge badge-muted" id="ms3Badge">Pending</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Autonomous Agent Telemetry Feed -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold-bright);text-transform:uppercase;margin-bottom:0.4rem;display:flex;justify-content:space-between">
+          <span>// Live System Status Log</span>
+          <span style="color:var(--green)">● LIVE</span>
+        </div>
+        <div class="agent-terminal" id="terminalLog">
+          <div class="term-log"><span class="term-tag">[SYSTEM]</span> Nexrow Escrow Engine ready.</div>
+          <div class="term-log"><span class="term-tag">[AI-AGENT]</span> Ready to start project.</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Key Presentation Highlights for Judges -->
+  <div class="judge-metrics-grid fade-up">
+    <div class="metric-card">
+      <div class="metric-num">100%</div>
+      <div class="metric-lbl">Automatic & Easy</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">0%</div>
+      <div class="metric-lbl">Payment Fraud Risk</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">&lt; 3 Sec</div>
+      <div class="metric-lbl">Freelancer Match Time</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">100%</div>
+      <div class="metric-lbl">Protected Escrow Vault</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:3rem">
+    <a href="how-it-works.html" class="btn btn-gold" style="padding:0.8rem 2rem;font-size:0.95rem">
+      🚀 Explore Full Interactive Escrow Walkthrough →
+    </a>
+  </div>
+
+</div>
+
+<script type="module">
+// ─────────────────────────────────────────────────────────────────
+// SIMPLE & EASY SCRIPTED DEMONSTRATION SCENARIO
+// ─────────────────────────────────────────────────────────────────
+
+const DEMO_SCENARIO = [
+  // STAGE 1: AI Scoping (Simple language)
+  {
+    stage: 1,
+    sender: 'agent',
+    agentName: 'AI Deal Assistant',
+    text: "🎙️ <strong>Step 1: Project Understood!</strong><br/>The client spoke: <em>'I need a Logo & Luxury Brand Identity for ₹32,000'</em>.<br/>AI has set up 3 simple payment milestones (30% / 40% / 30%) to keep funds 100% safe.",
+    log: "[AI-ASSISTANT] Project created: Logo Design. Total Budget: ₹32,000.",
+    vaultBadge: 'PROJECT CREATED',
+    vaultAmount: '₹32,000.00',
+    delay: 2200
+  },
+
+  // STAGE 2: Autonomous Talent Matching & Friendly Negotiation
+  {
+    stage: 2,
+    sender: 'agent',
+    agentName: 'AI Matchmaker',
+    text: "🔍 <strong>Step 2: Best Freelancer Found!</strong><br/>AI searched 20+ verified pros and matched with <strong>Rohan Mehta</strong> (⭐ 5.0 Rating, 210 Completed Projects). Sending him the project details now...",
+    log: "[AI-MATCHMAKER] Contacted Rohan Mehta with project brief.",
+    delay: 2400
+  },
+  {
+    stage: 2,
+    sender: 'freelancer',
+    agentName: 'Rohan Mehta (Freelancer)',
+    text: "👋 Hi! I reviewed the project. I can deliver modern luxury logo concepts in 4 days with complete vector files. Can we do this for <strong>₹35,000</strong>?",
+    log: "[ROHAN] Freelancer proposed ₹35,000 for 4-day delivery.",
+    delay: 2600
+  },
+  {
+    stage: 2,
+    sender: 'agent',
+    agentName: 'AI Negotiator',
+    text: "🤖 <strong>AI Counter-Offer:</strong> The client's budget is locked at <strong>₹32,000</strong>. We guarantee an immediate 30% first payout as soon as the first drafts are ready. Do you accept?",
+    log: "[AI-NEGOTIATOR] Countered with client budget ₹32,000 + instant first payout.",
+    delay: 2600
+  },
+  {
+    stage: 2,
+    sender: 'freelancer',
+    agentName: 'Rohan Mehta (Freelancer)',
+    text: "🤝 Sounds very fair! I accept <strong>₹32,000</strong>. Let's lock the money safely in escrow and start work!",
+    log: "[AGREEMENT] Both parties agreed on ₹32,000.",
+    delay: 2200
+  },
+
+  // STAGE 3: Money Locked Safely in Escrow
+  {
+    stage: 3,
+    sender: 'system',
+    agentName: 'Escrow Vault Guard',
+    text: "🔒 <strong>Step 3: Payment Safely Locked!</strong><br/><strong>₹32,000</strong> is now securely held in the escrow vault (TX: <code>ALGO-NX-98402X</code>). The freelancer sees the money is guaranteed, but neither party can take it until work is verified!",
+    log: "[VAULT] ₹32,000 locked safely in escrow. Receipt: ALGO-NX-98402X.",
+    vaultBadge: 'MONEY LOCKED SAFELY 🔒',
+    activeMilestone: 1,
+    delay: 2600
+  },
+
+  // STAGE 4: Freelancer submits deliverable & AI Quality Check
+  {
+    stage: 4,
+    sender: 'freelancer',
+    agentName: 'Rohan Mehta (Freelancer)',
+    text: "📦 <strong>Step 4: Step 1 Work Completed!</strong><br/>I have uploaded the initial logo concepts and design files (Link: <code>figma.com/@nexrow/brand-kit</code>). Requesting AI quality check!",
+    log: "[DELIVERED] Rohan uploaded Logo Drafts & Design Files.",
+    delay: 2400
+  },
+  {
+    stage: 4,
+    sender: 'agent',
+    agentName: 'AI Quality Checker',
+    text: "🔬 <strong>AI Check Passed (98.6% Score ✓):</strong><br/>AI checked the design files, image quality, and clarity. Everything looks great with zero errors!",
+    log: "[AI-CHECK] Quality score: 98.6% (Approved).",
+    delay: 2800
+  },
+
+  // STAGE 5: Automated Milestone Payout Release
+  {
+    stage: 5,
+    sender: 'system',
+    agentName: 'Automatic Payment Release',
+    text: "💸 <strong>Step 5: Milestone 1 Paid!</strong><br/><strong>₹9,600 (30%)</strong> is sent directly to Rohan's account after OTP verification (<code>849-201</code>). Moving to Step 2!",
+    log: "[PAID] Milestone 1 (₹9,600) released to Rohan. Moving to Milestone 2.",
+    releasedMilestone: 1,
+    activeMilestone: 2,
+    delay: 2500
+  },
+  {
+    stage: 5,
+    sender: 'freelancer',
+    agentName: 'Rohan Mehta (Freelancer)',
+    text: "🎉 Payment received instantly in my wallet! Starting work on Step 2 (Brand Guidelines) right away.",
+    log: "[FREELANCER] Rohan confirmed payment received. Starting Step 2.",
+    delay: 2000
+  },
+  {
+    stage: 5,
+    sender: 'agent',
+    agentName: 'AI Assistant',
+    text: "🏆 <strong>Summary:</strong> The entire process happened automatically — from negotiation and money protection to quality check and instant payment. Zero fraud, 100% peace of mind!",
+    log: "[COMPLETED] Demo finished smoothly with 100% automated protection.",
+    releasedMilestone: 2,
+    releasedMilestone3: true,
+    vaultBadge: 'ALL MILESTONES COMPLETED ✅',
+    delay: 1500
+  }
+];
+
+let currentIndex = 0;
+let isPlaying = false;
+let timeoutId = null;
+let speedFactor = 1;
+
+const chatStream = document.getElementById('chatStream');
+const terminalLog = document.getElementById('terminalLog');
+const playBtn = document.getElementById('playBtn');
+const playIcon = document.getElementById('playIcon');
+const playLabel = document.getElementById('playLabel');
+const stepBtn = document.getElementById('stepBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+function logTerminal(msg) {
+  const div = document.createElement('div');
+  div.className = 'term-log';
+  div.innerHTML = msg.replace(/\[(.*?)\]/g, '<span class="term-tag">[$1]</span>');
+  terminalLog.appendChild(div);
+  terminalLog.scrollTop = terminalLog.scrollHeight;
+}
+
+function updateTimelineStage(stageNum) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('st' + i);
+    if (!el) continue;
+    if (i < stageNum) {
+      el.className = 't-step done';
+      el.innerHTML = `✓ Stage ${i}`;
+    } else if (i === stageNum) {
+      el.className = 't-step active';
+    } else {
+      el.className = 't-step';
+    }
+  }
+}
+
+function renderNextMessage() {
+  if (currentIndex >= DEMO_SCENARIO.length) {
+    pauseDemo();
+    playLabel.textContent = 'Demo Finished (Reset to replay)';
+    return;
+  }
+
+  const step = DEMO_SCENARIO[currentIndex];
+  currentIndex++;
+
+  // Update timeline
+  if (step.stage) updateTimelineStage(step.stage);
+
+  // Update vault
+  if (step.vaultBadge) {
+    document.getElementById('vaultBadge').textContent = step.vaultBadge;
+  }
+  if (step.vaultAmount) {
+    document.getElementById('vaultAmountText').textContent = step.vaultAmount;
+  }
+  if (step.stage === 3) {
+    document.getElementById('algoTxHash').textContent = 'ALGO-NX-98402X-256BIT';
+  }
+
+  // Update milestones
+  if (step.activeMilestone === 1) {
+    document.getElementById('ms1Row').classList.add('active');
+    document.getElementById('ms1Badge').textContent = 'Active ⏳';
+    document.getElementById('ms1Badge').className = 'badge badge-gold';
+  }
+  if (step.releasedMilestone === 1) {
+    document.getElementById('ms1Row').className = 'ms-row released';
+    document.getElementById('ms1Badge').textContent = 'Released ✓';
+    document.getElementById('ms1Badge').className = 'badge badge-green';
+    launchConfettiCelebration();
+  }
+  if (step.activeMilestone === 2) {
+    document.getElementById('ms2Row').classList.add('active');
+    document.getElementById('ms2Badge').textContent = 'In Progress ⏳';
+    document.getElementById('ms2Badge').className = 'badge badge-cyan';
+  }
+  if (step.releasedMilestone === 2) {
+    document.getElementById('ms2Row').className = 'ms-row released';
+    document.getElementById('ms2Badge').textContent = 'Released ✓';
+    document.getElementById('ms2Badge').className = 'badge badge-green';
+    document.getElementById('ms3Row').className = 'ms-row released';
+    document.getElementById('ms3Badge').textContent = 'Released ✓';
+    document.getElementById('ms3Badge').className = 'badge badge-green';
+    launchConfettiCelebration();
+  }
+
+  // Log terminal
+  if (step.log) logTerminal(step.log);
+
+  // Render chat bubble
+  const bubble = document.createElement('div');
+  if (step.sender === 'agent') {
+    bubble.className = 'msg-bubble msg-agent';
+    bubble.innerHTML = `<div class="sender-badge sb-agent">🤖 ${step.agentName}</div><div>${step.text}</div>`;
+  } else if (step.sender === 'freelancer') {
+    bubble.className = 'msg-bubble msg-freelancer';
+    bubble.innerHTML = `<div class="sender-badge sb-freelancer">👤 ${step.agentName}</div><div>${step.text}</div>`;
+  } else {
+    bubble.className = 'msg-bubble msg-system';
+    bubble.innerHTML = `<div>${step.text}</div>`;
+  }
+
+  chatStream.appendChild(bubble);
+  chatStream.scrollTop = chatStream.scrollHeight;
+
+  if (isPlaying && currentIndex < DEMO_SCENARIO.length) {
+    const calculatedDelay = (step.delay || 2000) / speedFactor;
+    timeoutId = setTimeout(renderNextMessage, calculatedDelay);
+  }
+}
+
+function startDemo() {
+  isPlaying = true;
+  playIcon.textContent = '⏸';
+  playLabel.textContent = 'Pause Demo';
+  renderNextMessage();
+}
+
+function pauseDemo() {
+  isPlaying = false;
+  playIcon.textContent = '▶';
+  playLabel.textContent = 'Resume Demo';
+  if (timeoutId) clearTimeout(timeoutId);
+}
+
+playBtn.addEventListener('click', () => {
+  if (isPlaying) {
+    pauseDemo();
+  } else {
+    startDemo();
+  }
+});
+
+stepBtn.addEventListener('click', () => {
+  pauseDemo();
+  renderNextMessage();
+});
+
+restartBtn.addEventListener('click', () => {
+  pauseDemo();
+  currentIndex = 0;
+  chatStream.innerHTML = '';
+  terminalLog.innerHTML = `
+    <div class="term-log"><span class="term-tag">[SYSTEM]</span> Multi-Agent Escrow Orchestrator initialized.</div>
+    <div class="term-log"><span class="term-tag">[AGENT-1]</span> Deal Architect ready for project parameters.</div>
+  `;
+  document.getElementById('vaultBadge').textContent = 'INITIALIZING';
+  document.getElementById('algoTxHash').textContent = 'ALGO-NX-INIT';
+  document.getElementById('ms1Row').className = 'ms-row';
+  document.getElementById('ms1Badge').textContent = 'Pending';
+  document.getElementById('ms1Badge').className = 'badge badge-muted';
+  document.getElementById('ms2Row').className = 'ms-row';
+  document.getElementById('ms2Badge').textContent = 'Pending';
+  document.getElementById('ms2Badge').className = 'badge badge-muted';
+  document.getElementById('ms3Row').className = 'ms-row';
+  document.getElementById('ms3Badge').textContent = 'Pending';
+  document.getElementById('ms3Badge').className = 'badge badge-muted';
+  updateTimelineStage(1);
+  playLabel.textContent = 'Start Autonomous Demo';
+});
+
+// Speed toggles
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    speedFactor = parseFloat(btn.dataset.speed) || 1;
+  });
+});
+
+// ── Verified Freelancers Dataset for Demo ──
+const DEMO_FREELANCERS = [
+  { id: 1, name: 'Aarav Sharma', email: 'aarav@nexrow.io', domain: 'FULL STACK WEB DEVELOPMENT', exp: '5 Years', rating: '⭐ 4.9', projects: 128, rate: '₹1,500/hr', location: 'Mumbai', bio: 'Builds scalable React, Node.js & MongoDB applications.' },
+  { id: 2, name: 'Priya Patel', email: 'priya@nexrow.io', domain: 'UI/UX DESIGN', exp: '4 Years', rating: '⭐ 4.8', projects: 95, rate: '₹1,200/hr', location: 'Ahmedabad', bio: 'Creates premium mobile and web interfaces using Figma.' },
+  { id: 3, name: 'Rohan Mehta', email: 'rohan@nexrow.io', domain: 'LOGO & BRAND IDENTITY', exp: '6 Years', rating: '⭐ 5.0', projects: 210, rate: '₹1,000/hr', location: 'Pune', bio: 'Expert in minimalist and luxury brand identity.' },
+  { id: 17, name: 'Dev Malhotra', email: 'dev@nexrow.io', domain: 'VIDEO EDITING & MOTION GRAPHICS', exp: '6 Years', rating: '⭐ 4.9', projects: 175, rate: '₹1,250/hr', location: 'Indore', bio: 'Adobe Premiere Pro & After Effects expert.' },
+  { id: 4, name: 'Sneha Kulkarni', email: 'sneha@nexrow.io', domain: 'SKETCH ARTIST', exp: '3 Years', rating: '⭐ 4.7', projects: 76, rate: '₹850/hr', location: 'Nagpur', bio: 'Hyper-realistic pencil portraits and custom sketches.' },
+  { id: 5, name: 'Aditya Verma', email: 'aditya@nexrow.io', domain: 'WORDPRESS DEVELOPMENT', exp: '5 Years', rating: '⭐ 4.8', projects: 140, rate: '₹900/hr', location: 'Delhi', bio: 'Develops SEO-friendly business websites.' }
+];
+
+function renderDemoFreelancers() {
+  const list = document.getElementById('demoFreelancersList');
+  if (!list) return;
+
+  list.innerHTML = DEMO_FREELANCERS.map(f => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem;transition:all 0.25s" onmouseover="this.style.borderColor='var(--gold)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)'">
+      <div style="display:flex;align-items:center;gap:0.85rem">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--gold-dim);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-weight:bold;color:var(--gold);font-size:1.15rem;box-shadow:0 0 15px rgba(245,158,11,0.2)">
+          ${f.name.charAt(0)}
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <strong style="font-size:1.02rem;color:var(--text)">${f.name}</strong>
+            <span class="badge badge-cyan" style="font-size:0.62rem;font-family:'JetBrains Mono',monospace">${f.domain}</span>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text2);margin-top:0.15rem">${f.bio}</div>
+          <div style="font-size:0.72rem;color:var(--text3);margin-top:0.25rem;font-family:'DM Mono',monospace">
+            ${f.rating} · ${f.projects} Projects · 📍 ${f.location} · <span style="color:var(--gold-bright);font-weight:700">${f.rate}</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-gold btn-sm select-demo-fl-btn" data-fid="${f.id}" data-fname="${f.name}" data-femail="${f.email}" style="padding:0.5rem 1.1rem;font-size:0.78rem;font-weight:700;box-shadow:0 4px 15px rgba(245,158,11,0.3)">
+        🚀 START ESCROW WITH ${f.name.split(' ')[0].toUpperCase()} →
+      </button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.select-demo-fl-btn').forEach(btn => {
+    btn.onclick = () => {
+      const fid = btn.dataset.fid;
+      const fname = btn.dataset.fname;
+      const femail = btn.dataset.femail;
+      const dealId = 'NX-' + Date.now().toString(36).toUpperCase();
+      const budget = 32000;
+      const title = 'Logo & Luxury Brand Identity';
+      const desc = 'Complete vector identity, brand guidelines & SVG assets.';
+
+      const targetUrl = `how-it-works.html?fid=${fid}&fname=${encodeURIComponent(fname)}&femail=${encodeURIComponent(femail)}&dealId=${dealId}&budget=${budget}&title=${encodeURIComponent(title)}&desc=${encodeURIComponent(desc)}`;
+      window.location.href = targetUrl;
+    };
+  });
+}
+
+const modalOverlay = document.getElementById('dealCreatedModal');
+const openModalBtn = document.getElementById('openMatchedModalBtn');
+const closeModalBtn = document.getElementById('closeDealCreatedModalBtn');
+
+function openMatchedModal() {
+  if (modalOverlay) {
+    modalOverlay.classList.add('open');
+    renderDemoFreelancers();
+    launchConfettiCelebration();
+  }
+}
+
+function closeMatchedModal() {
+  if (modalOverlay) modalOverlay.classList.remove('open');
+}
+
+if (openModalBtn) openModalBtn.addEventListener('click', openMatchedModal);
+if (closeModalBtn) closeModalBtn.addEventListener('click', closeMatchedModal);
+
+// Auto-open modal when scenario completes
+function onScenarioComplete() {
+  setTimeout(() => {
+    openMatchedModal();
+  }, 1200);
+}
+
+// Attach hook in scenario completion
+const originalRenderNext = renderNextMessage;
+renderNextMessage = function() {
+  originalRenderNext();
+  if (currentIndex >= DEMO_SCENARIO.length) {
+    onScenarioComplete();
+  }
+};
+
+renderDemoFreelancers();
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow — Select Portal & Role</title>
+<link rel="stylesheet" href="../css/style.css"/>
+<style>
+  .role-wrap {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 2.5rem 1.5rem;
+    position: relative;
+  }
+  .role-box { position: relative; z-index: 1; max-width: 800px; width: 100%; text-align: center; }
+  .role-logo {
+    font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800;
+    letter-spacing: -0.03em; margin-bottom: 0.5rem;
+  }
+  .role-logo span { color: var(--gold-bright); }
+  .role-title { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .role-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text3); margin-bottom: 2.5rem; letter-spacing: 0.05em; }
+  .role-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-bottom: 2.5rem; }
+  .role-card {
+    background: var(--card); border: 1px solid var(--border); padding: 2.2rem 1.5rem; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none; color: inherit; display: block; border-radius: var(--radius); text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+  .role-card:hover { border-color: var(--gold-light); transform: translateY(-4px); box-shadow: var(--glow-gold); }
+  .role-card-icon { font-size: 2.8rem; margin-bottom: 1rem; }
+  .role-card-name { font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text); }
+  .role-card-desc { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.82rem; color: var(--text2); line-height: 1.5; }
+  .role-logout { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text3); cursor: pointer; text-decoration: underline; background: none; border: none; transition: color 0.2s; }
+  .role-logout:hover { color: var(--red); }
+  @media (max-width: 768px) { .role-cards { grid-template-columns: 1fr; } }
+</style>
+<script>
+  (function() {
+    const theme = localStorage.getItem('supremex-theme') || 'dark';
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme');
+    }
+  })();
+</script>
+</head>
+<body class="fade-in">
+
+<div class="role-wrap">
+  <div class="role-box fade-up">
+    <div class="role-logo">Nex<span>row</span></div>
+    <div class="role-title">Select Your Portal</div>
+    <div class="role-sub">// Access specialized workspace for your account</div>
+    <div class="role-cards">
+      <button class="role-card" id="clientCard">
+        <div class="role-card-icon">👤</div>
+        <div class="role-card-name">Client Portal</div>
+        <div class="role-card-desc">Create escrow deals, vault funds, and verify work payouts.</div>
+      </button>
+      <button class="role-card" id="freelancerCard">
+        <div class="role-card-icon">🛠️</div>
+        <div class="role-card-name">Freelancer Portal</div>
+        <div class="role-card-desc">Accept assigned work, upload delivery proof, and track earnings.</div>
+      </button>
+      <button class="role-card" id="adminCard">
+        <div class="role-card-icon">👑</div>
+        <div class="role-card-name">Admin Portal</div>
+        <div class="role-card-desc">System governance, platform volume, user audit & dispute resolution.</div>
+      </button>
+    </div>
+    <div style="margin-top: 1rem;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text3)" id="userEmail"></span>
+    </div>
+    <div id="alertBox"></div>
+    <button class="role-logout" id="logoutBtn" style="margin-top: 1rem;">Logout</button>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = 'https://qhcxwwobfqsecwqsvwid.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoY3h3d29iZnFzZWN3cXN2d2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODc0NzQsImV4cCI6MjA5NDc2MzQ3NH0.ZIcAU6PjSwEHeGZtD8B8NKJEd3YifgZa7S7hR9zbkMM';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const isRoot = !window.location.pathname.includes('/pages/');
+
+async function requireAuth(callback) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const localUser = JSON.parse(localStorage.getItem('sx_active_user') || 'null');
+  const activeUser = session?.user || localUser;
+  if (!activeUser) {
+    window.location.href = '../index.html';
+    return;
+  }
+  callback(activeUser);
+}
+
+function setupLogout() {
+  const btn = document.getElementById('logoutBtn');
+  if (btn) btn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = isRoot ? 'index.html' : '../index.html';
+  });
+}
+
+requireAuth((user) => {
+  document.getElementById('userEmail').textContent = user.email;
+  setupLogout();
+
+  async function setRoleAndNavigate(role, redirectUrl) {
+    const cardId = role === 'admin' ? 'adminCard' : role === 'freelancer' ? 'freelancerCard' : 'clientCard';
+    document.getElementById(cardId).style.opacity = '0.5';
+    try {
+      await supabase.from('users').upsert({
+        id: user.id,
+        email: user.email,
+        role: role,
+        name: user.user_metadata?.name || user.email
+      });
+      window.location.href = redirectUrl;
+    } catch(e) {
+      document.getElementById(cardId).style.opacity = '1';
+      document.getElementById('alertBox').innerHTML = `<div class='alert alert-error'>Failed to set role: ${e.message}</div>`;
+    }
+  }
+
+  document.getElementById('clientCard').addEventListener('click', () => {
+    setRoleAndNavigate('client', 'client-dashboard.html');
+  });
+
+  document.getElementById('freelancerCard').addEventListener('click', () => {
+    setRoleAndNavigate('freelancer', 'freelancer-dashboard.html');
+  });
+
+  document.getElementById('adminCard').addEventListener('click', () => {
+    setRoleAndNavigate('admin', 'admin-dashboard.html');
+  });
+});
+</script>
+<script type="module">
+// Universal Clean Logout Handler
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  try {
+    if (window.supabase && window.supabase.auth) {
+      await window.supabase.auth.signOut();
+    }
+  } catch(e) {}
+  const isInPages = window.location.pathname.includes('/pages/');
+  window.location.replace(isInPages ? '../index.html' : 'index.html');
+});
+</script>
+</body>
+</html>

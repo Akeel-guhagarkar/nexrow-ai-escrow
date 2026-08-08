@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow — Dashboard</title>
+<link rel="stylesheet" href="../css/style.css"/>
+<style>
+  .dash-header { padding: 3rem 0 2rem; border-bottom: 1px solid var(--border); margin-bottom: 2.5rem; }
+  .dash-greeting { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--gold-light); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 500; }
+  .dash-title { font-size: clamp(1.8rem, 3.5vw, 2.5rem); margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif; font-weight: 800; }
+  .dash-role { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text2); background: var(--surface); padding: 0.35rem 0.85rem; border-radius: 20px; border: 1px solid var(--border); display: inline-block; }
+  .deals-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+  .deals-header h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text2); }
+  .deals-list { display: flex; flex-direction: column; gap: 1rem; background: transparent; border: none; }
+  .tabs-row { display: flex; gap: 0.4rem; margin-bottom: 1.8rem; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); padding: 4px; border-radius: 30px; width: fit-content; border: 1px solid var(--border); }
+  .tab-btn { padding: 0.5rem 1.4rem; font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; background: none; border: none; border-radius: 20px; color: var(--text3); cursor: pointer; transition: all 0.25s ease; }
+  .tab-btn.active { background: var(--gold-gradient); color: #000; font-weight: 700; box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3); }
+  .deals-panel { display: none; }
+  .deals-panel.active { display: block; }
+  .deal-code-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 600; color: var(--gold-bright); background: var(--gold-dim); border: 1px solid rgba(245,158,11,0.3); padding: 0.25rem 0.65rem; border-radius: 20px; letter-spacing: 0.05em; }
+</style>
+<script>
+  (function() {
+    const theme = localStorage.getItem('supremex-theme') || 'dark';
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme');
+    }
+  })();
+</script>
+</head>
+<body class="fade-in">
+
+<nav class="topnav">
+  <a href="client-dashboard.html" class="nav-logo">Nex<span>row</span></a>
+  <div class="nav-right">
+    <a href="how-it-works.html" class="nav-link" style="font-size:0.78rem">🚀 Walkthrough</a>
+    <button class="theme-toggle-btn" id="themeToggleBtn">🌙 Dark</button>
+    <span class="nav-user" id="navUser"></span>
+    <button class="nav-logout" id="logoutBtn">Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="dash-header fade-up">
+    <div class="dash-greeting">// Welcome back</div>
+    <h1 class="dash-title" id="dashTitle">Freelancer Dashboard</h1>
+    <span class="dash-role" id="userRole"></span>
+  </div>
+  <div class="stat-row fade-up" id="statsRow">
+    <div class="stat-box"><div class="stat-box-num" id="statTotal">—</div><div class="stat-box-label">Total Deals</div></div>
+    <div class="stat-box"><div class="stat-box-num" id="statLocked">—</div><div class="stat-box-label">Active</div></div>
+    <div class="stat-box"><div class="stat-box-num" id="statReleased">—</div><div class="stat-box-label">Released</div></div>
+  </div>
+  <div class="fade-up">
+    <div class="deals-header">
+      <h3>// Your Deals</h3>
+      <a href="create-deal.html" class="btn btn-gold btn-sm" id="newDealBtn">+ New Deal</a>
+    </div>
+    <div class="tabs-row">
+      <button class="tab-btn active" id="tabAll">All</button>
+      <button class="tab-btn" id="tabActive">Active</button>
+      <button class="tab-btn" id="tabCompleted">Completed</button>
+    </div>
+    <div id="alertBox"></div>
+    <div id="loading" class="flex-center" style="padding:3rem"><div class="spinner"></div></div>
+    <div class="deals-panel active" id="panel-all"><div class="deals-list" id="list-all"></div></div>
+    <div class="deals-panel" id="panel-active"><div class="deals-list" id="list-active"></div></div>
+    <div class="deals-panel" id="panel-completed"><div class="deals-list" id="list-completed"></div></div>
+  </div>
+  <div style="text-align:center;margin-top:2rem">
+    <a href="role-select.html" style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--text3);text-decoration:none">← Switch role</a>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = 'https://qhcxwwobfqsecwqsvwid.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoY3h3d29iZnFzZWN3cXN2d2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODc0NzQsImV4cCI6MjA5NDc2MzQ3NH0.ZIcAU6PjSwEHeGZtD8B8NKJEd3YifgZa7S7hR9zbkMM';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const isRoot = !window.location.pathname.includes('/pages/');
+async function requireAuth(callback) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const localUser = JSON.parse(localStorage.getItem('sx_active_user') || 'null');
+  const activeUser = session?.user || localUser;
+  if (!activeUser) {
+    window.location.href = '../index.html';
+    return;
+  }
+  callback(activeUser);
+}
+function setNavUser(user) {
+  const el = document.getElementById('navUser');
+  if (el && user && user.email) el.textContent = user.email.length > 24 ? user.email.slice(0, 22) + '…' : user.email;
+}
+function setupLogout() {
+  const btn = document.getElementById('logoutBtn');
+  if (btn) btn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = isRoot ? 'index.html' : '../index.html';
+  });
+}
+function formatINR(amount) { return '₹' + Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function formatDate(ts) {
+  if (!ts) return '—'; const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+const STATUS = {
+  WAITING_FOR_CLIENT: { label: 'Waiting for Client', badge: 'badge-muted' },
+  CLIENT_JOINED:      { label: 'Client Joined',      badge: 'badge-cyan' },
+  PENDING:            { label: 'Pending Payment',    badge: 'badge-muted' },
+  LOCKED:             { label: 'Payment Locked',     badge: 'badge-gold' },
+  DELIVERED:          { label: 'Delivered',          badge: 'badge-cyan' },
+  VERIFYING:          { label: 'Verifying',          badge: 'badge-amber' },
+  RELEASED:           { label: 'Payment Released',   badge: 'badge-green' },
+  DISPUTED:           { label: 'Disputed',           badge: 'badge-red' },
+};
+
+const params = new URLSearchParams(window.location.search);
+const viewRole = params.get('role') || 'freelancer';
+
+requireAuth(async (user) => {
+  setNavUser(user);
+  setupLogout();
+  const isFreelancer = viewRole === 'freelancer';
+  document.getElementById('dashTitle').textContent = isFreelancer ? 'Freelancer Dashboard' : 'Client Dashboard';
+  document.getElementById('userRole').textContent = `Mode: ${isFreelancer ? '🛠 Freelancer' : '👤 Client'} · ${user.email}`;
+
+  if (!isFreelancer) document.getElementById('newDealBtn').style.display = 'none';
+
+  const fieldToQuery = isFreelancer ? 'freelancer_id' : 'client_id';
+  let deals = [];
+  try {
+    const { data, error } = await supabase
+      .from('deals')
+      .select('*')
+      .eq(fieldToQuery, user.id)
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    if (data) {
+       deals = data.map(d => ({
+         ...d,
+         dealId: d.deal_id,
+         uniqueCode: d.unique_code,
+         createdAt: d.created_at,
+         status: d.status
+       }));
+    }
+  } catch(e) { console.error(e); }
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('statTotal').textContent = deals.length;
+  document.getElementById('statLocked').textContent = deals.filter(d => ['WAITING_FOR_CLIENT','CLIENT_JOINED','PENDING','LOCKED','DELIVERED','VERIFYING'].includes(d.status)).length;
+  document.getElementById('statReleased').textContent = deals.filter(d => d.status === 'RELEASED').length;
+
+  const renderList = (containerId, filtered) => {
+    const el = document.getElementById(containerId);
+    if (!filtered.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No deals yet</div><div class="empty-sub">${isFreelancer ? '// Create a new deal to get started' : '// Join a deal using a code'}</div></div>`;
+      return;
+    }
+    el.innerHTML = filtered.map(d => {
+      const s = STATUS[d.status] || STATUS.PENDING;
+      const codeDisplay = d.uniqueCode ? `<span class="deal-code-badge">${d.uniqueCode}</span>` : '';
+      return `<a class="deal-card" href="status.html?id=${d.id}"><div class="deal-card-top"><div><div class="deal-card-id">${d.dealId || d.uniqueCode || d.id}</div><div class="deal-card-title">${escHtml(d.title)}</div></div><span class="badge ${s.badge}">${s.label}</span></div><div class="deal-card-desc">${escHtml(d.description || '')}</div><div class="deal-card-bottom"><div class="deal-card-amount">${formatINR(d.budget || d.amount || 0)}</div><span style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text3)">${codeDisplay} · ${formatDate(d.createdAt)}</span></div></a>`;
+    }).join('');
+  };
+
+  const activeStatuses = ['WAITING_FOR_CLIENT','CLIENT_JOINED','PENDING','LOCKED','DELIVERED','VERIFYING'];
+  const completedStatuses = ['RELEASED','DISPUTED'];
+  renderList('list-all', deals);
+  renderList('list-active', deals.filter(d => activeStatuses.includes(d.status)));
+  renderList('list-completed', deals.filter(d => completedStatuses.includes(d.status)));
+});
+
+document.getElementById('tabAll').addEventListener('click', () => switchTab('all'));
+document.getElementById('tabActive').addEventListener('click', () => switchTab('active'));
+document.getElementById('tabCompleted').addEventListener('click', () => switchTab('completed'));
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  document.querySelectorAll('.deals-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+}
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Theme Toggle Button Logic
+const themeBtn = document.getElementById('themeToggleBtn');
+if (themeBtn) {
+  const currentTheme = localStorage.getItem('supremex-theme') || 'dark';
+  themeBtn.textContent = currentTheme === 'light' ? '☀️ Light' : '🌙 Dark';
+  if (currentTheme === 'light') {
+    document.body.classList.add('light-theme');
+    document.documentElement.classList.add('light-theme');
+  }
+  themeBtn.addEventListener('click', () => {
+    const isLight = document.body.classList.toggle('light-theme');
+    document.documentElement.classList.toggle('light-theme', isLight);
+    const newTheme = isLight ? 'light' : 'dark';
+    localStorage.setItem('supremex-theme', newTheme);
+    themeBtn.textContent = isLight ? '☀️ Light' : '🌙 Dark';
+  });
+}
+</script>
+<script type="module">
+// Universal Clean Logout Handler
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  try {
+    if (window.supabase && window.supabase.auth) {
+      await window.supabase.auth.signOut();
+    }
+  } catch(e) {}
+  const isInPages = window.location.pathname.includes('/pages/');
+  window.location.replace(isInPages ? '../index.html' : 'index.html');
+});
+</script>
+</body>
+</html>

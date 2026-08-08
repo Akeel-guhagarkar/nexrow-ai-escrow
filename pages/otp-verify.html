@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow — OTP Verification</title>
+<link rel="stylesheet" href="../css/style.css"/>
+<style>
+  .otp-card { background: var(--card); border: 1px solid var(--border); padding: 2.5rem 2rem; text-align: center; max-width: 420px; margin: 0 auto; }
+  .otp-icon { font-size: 3.5rem; margin-bottom: 1.2rem; animation: pulse 2s ease-in-out infinite; }
+  .otp-hint { background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.2); padding: 0.7rem 1rem; font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--gold); margin: 1rem 0; display: flex; align-items: center; gap: 0.5rem; justify-content: center; }
+  .proof-viewer { background: var(--surface); border: 1px solid var(--border); padding: 1.2rem; margin-bottom: 1.5rem; text-align: left; }
+  .proof-viewer-title { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text3); margin-bottom: 0.8rem; }
+  .proof-viewer-img { max-width: 100%; max-height: 220px; object-fit: contain; display: block; margin: 0 auto; }
+  .proof-viewer-msg { font-size: 0.82rem; color: var(--text2); line-height: 1.6; margin-top: 0.8rem; font-family: 'DM Mono', monospace; border-left: 2px solid var(--gold); padding-left: 0.8rem; }
+  .verify-layers { display: flex; flex-direction: column; gap: 0.4rem; margin: 1.2rem 0; text-align: left; }
+  .vl-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.8rem; background: var(--surface); border: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 0.7rem; }
+  .vl-row .vl-label { color: var(--text2); }
+  .vl-row .vl-val { color: var(--green); }
+  .vl-row .vl-val.pending { color: var(--amber); }
+  .resend-link { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--text3); cursor: pointer; margin-top: 0.8rem; display: block; text-decoration: underline; transition: color 0.2s; background: none; border: none; }
+  .resend-link:hover { color: var(--gold); }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="client-dashboard.html" class="nav-logo">Nex<span>row</span></a>
+  <div class="nav-right">
+    <a href="how-it-works.html" class="nav-link" style="font-size:0.78rem">🚀 Walkthrough</a>
+    <span class="nav-user" id="navUser"></span>
+    <button class="nav-logout" id="logoutBtn">Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+<div class="page-wrap" style="padding-top:2.5rem">
+  <div class="page-header fade-up">
+    <div class="tag">// Layer 5: OTP Verification</div>
+    <h1>Verify Delivery</h1>
+    <p class="mt-2" style="font-size:0.85rem">Review the freelancer's proof and enter the OTP to release payment from escrow.</p>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <div class="proof-viewer fade-up" id="proofViewer">
+    <div class="proof-viewer-title">// Proof of Delivery</div>
+    <div id="proofContent">Loading...</div>
+  </div>
+
+  <div class="fade-up">
+    <div style="font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);margin-bottom:0.6rem">// Verification Layers</div>
+    <div class="verify-layers">
+      <div class="vl-row"><span class="vl-label">01 · Payment Locked</span><span class="vl-val">✓ Passed</span></div>
+      <div class="vl-row"><span class="vl-label">02 · Proof Submitted</span><span class="vl-val" id="vl2">—</span></div>
+      <div class="vl-row"><span class="vl-label">03 · File Hash Verified</span><span class="vl-val" id="vl3">—</span></div>
+      <div class="vl-row"><span class="vl-label">04 · Timestamp Valid</span><span class="vl-val" id="vl4">—</span></div>
+      <div class="vl-row"><span class="vl-label">05 · OTP Confirmation</span><span class="vl-val pending" id="vl5">⏳ Pending</span></div>
+    </div>
+  </div>
+
+  <div class="otp-card fade-up mt-3">
+    <div class="otp-icon">🔐</div>
+    <h3 style="margin-bottom:0.4rem">Enter OTP to Release Payment</h3>
+    <p style="font-size:0.82rem">Enter the verification code to confirm delivery and release funds.</p>
+    <div class="otp-hint"><span>ℹ</span><span>A 6-digit OTP has been sent to your registered phone via SMS.</span></div>
+    <div class="otp-group">
+      <input class="otp-input" type="text" maxlength="1" id="otp1"/>
+      <input class="otp-input" type="text" maxlength="1" id="otp2"/>
+      <input class="otp-input" type="text" maxlength="1" id="otp3"/>
+      <input class="otp-input" type="text" maxlength="1" id="otp4"/>
+      <input class="otp-input" type="text" maxlength="1" id="otp5"/>
+      <input class="otp-input" type="text" maxlength="1" id="otp6"/>
+    </div>
+    <button class="btn btn-green btn-full" id="verifyBtn">✅ Verify & Release Payment</button>
+    <button class="resend-link" id="resendBtn">Didn't receive? Resend OTP</button>
+  </div>
+
+  <div class="mt-3 text-center fade-up">
+    <a href="" class="btn btn-danger btn-sm" id="disputeLink">⚠ Report Issue</a>
+    <p style="font-size:0.72rem;font-family:'DM Mono',monospace;color:var(--text3);margin-top:0.5rem">If the proof is invalid or delivery is incomplete</p>
+  </div>
+</div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = 'https://qhcxwwobfqsecwqsvwid.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoY3h3d29iZnFzZWN3cXN2d2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODc0NzQsImV4cCI6MjA5NDc2MzQ3NH0.ZIcAU6PjSwEHeGZtD8B8NKJEd3YifgZa7S7hR9zbkMM';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const isRoot = !window.location.pathname.includes('/pages/');
+
+async function requireAuth(callback) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const localUser = JSON.parse(localStorage.getItem('sx_active_user') || 'null');
+  const activeUser = session?.user || localUser;
+  if (!activeUser) {
+    window.location.href = '../index.html';
+    return;
+  }
+  callback(activeUser);
+}
+
+function setNavUser(user) {
+  const el = document.getElementById('navUser');
+  if (el && user && user.email) el.textContent = user.email.length > 24 ? user.email.slice(0, 22) + '…' : user.email;
+}
+
+function setupLogout() {
+  const btn = document.getElementById('logoutBtn');
+  if (btn) btn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = isRoot ? 'index.html' : '../index.html';
+  });
+}
+
+function showAlert(containerId, type, message) {
+  const icons = { error: '✕', success: '✓', info: 'ℹ', warning: '⚠' };
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = `<div class='alert alert-${type}'><span>${icons[type] || '•'}</span><span>${message}</span></div>`;
+  setTimeout(() => { el.innerHTML = ''; }, 5000);
+}
+
+function generateOTP() { return String(Math.floor(100000 + Math.random() * 900000)); }
+const SEND_OTP_URL = 'https://qhcxwwobfqsecwqsvwid.supabase.co/functions/v1/send-otp';
+
+const params    = new URLSearchParams(window.location.search);
+const dealDocId = params.get('id');
+let dealData = null;
+
+requireAuth(async (user) => {
+  setNavUser(user); setupLogout();
+  if (!dealDocId) return window.location.href = 'client-dashboard.html';
+
+  const { data, error } = await supabase.from('deals').select('*').eq('id', dealDocId).single();
+  if (error || !data) return window.location.href = 'client-dashboard.html';
+  dealData = data;
+
+  if (dealData.client_id !== user.id) {
+    showAlert('alertBox','error','Only the client can verify delivery.');
+    document.getElementById('verifyBtn').disabled = true;
+    return;
+  }
+  if (dealData.status !== 'DELIVERED') {
+    window.location.href = `status.html?id=${dealDocId}`;
+    return;
+  }
+
+  document.getElementById('vl2').textContent = dealData.proof_url ? '✓ Passed' : '✕ Missing';
+  document.getElementById('vl2').className   = 'vl-val' + (dealData.proof_url ? '' : ' pending');
+  document.getElementById('vl3').textContent = dealData.proof_url ? '✓ Verified' : '—';
+  document.getElementById('vl3').className   = 'vl-val';
+  document.getElementById('vl4').textContent = dealData.delivered_at ? '✓ Valid' : '—';
+  document.getElementById('vl4').className   = 'vl-val';
+
+  const proofEl = document.getElementById('proofContent');
+  if (dealData.proof_type === 'link') {
+    proofEl.innerHTML = `<a href="${dealData.proof_url}" target="_blank" class="btn btn-outline btn-sm">🔗 View Deliverable</a>`;
+  } else if (dealData.proof_type === 'image' && dealData.proof_url) {
+    proofEl.innerHTML = `<img src="${dealData.proof_url}" class="proof-viewer-img" alt="Proof"/>`;
+  } else if (dealData.proof_url) {
+    proofEl.innerHTML = `<a href="${dealData.proof_url}" target="_blank" class="btn btn-outline btn-sm">📄 View Proof File</a>`;
+  } else {
+    proofEl.innerHTML = `<span style="color:var(--text3);font-family:'DM Mono',monospace;font-size:0.75rem">No file proof uploaded.</span>`;
+  }
+  if (dealData.delivery_message) {
+    proofEl.innerHTML += `<div class="proof-viewer-msg">${dealData.delivery_message}</div>`;
+  }
+
+  // Set dispute link
+  const disputeLink = document.getElementById('disputeLink');
+  if (disputeLink) disputeLink.href = `dispute.html?id=${dealDocId}&action=raise`;
+
+  const otpInputs = ['otp1','otp2','otp3','otp4','otp5','otp6'].map(id => document.getElementById(id));
+  otpInputs.forEach((input, i) => {
+    input.addEventListener('input', () => { if (input.value.length === 1 && i < 5) otpInputs[i + 1].focus(); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Backspace' && !input.value && i > 0) otpInputs[i - 1].focus(); });
+  });
+
+  document.getElementById('verifyBtn').addEventListener('click', async () => {
+    const entered = otpInputs.map(i => i.value).join('');
+    if (entered.length < 6) return showAlert('alertBox','error','Please enter all 6 digits.');
+
+    const btn = document.getElementById('verifyBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Verifying...';
+
+    await new Promise(r => setTimeout(r, 800));
+
+    if (entered !== (dealData.otp || '000000')) {
+      showAlert('alertBox','error','Invalid OTP. Please check and try again.');
+      btn.disabled = false; btn.innerHTML = '✅ Verify & Release Payment';
+      otpInputs.forEach(i => i.value = ''); otpInputs[0].focus();
+      return;
+    }
+
+    btn.innerHTML = '<span class="spinner"></span> Releasing payment...';
+    try {
+      const { error } = await supabase.from('deals').update({
+        status: 'RELEASED',
+        verified_at: new Date().toISOString(),
+        released_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }).eq('id', dealDocId);
+
+      if (error) throw error;
+
+      document.getElementById('vl5').textContent = '✓ Passed';
+      document.getElementById('vl5').className = 'vl-val';
+      showAlert('alertBox','success','Payment Released Successfully! 🎉');
+      btn.innerHTML = '✅ Payment Released';
+      setTimeout(() => { window.location.href = `status.html?id=${dealDocId}`; }, 2000);
+    } catch(e) {
+      showAlert('alertBox','error','Verification failed: ' + e.message);
+      btn.disabled = false; btn.innerHTML = '✅ Verify & Release Payment';
+    }
+  });
+
+  document.getElementById('resendBtn').addEventListener('click', async () => {
+    const resendBtn = document.getElementById('resendBtn');
+    resendBtn.disabled = true;
+    resendBtn.textContent = 'Sending...';
+
+    const newOtp = generateOTP();
+    try {
+      const { error } = await supabase.from('deals').update({
+        otp: newOtp,
+        otp_status: 'sending',
+        updated_at: new Date().toISOString()
+      }).eq('id', dealDocId);
+      if (error) throw error;
+      dealData.otp = newOtp;
+
+      // Fetch client phone
+      let clientPhone = '';
+      if (dealData.client_id) {
+        const { data: cu } = await supabase.from('users').select('phone_number').eq('id', dealData.client_id).single();
+        if (cu && cu.phone_number) clientPhone = cu.phone_number;
+      }
+
+      if (clientPhone) {
+        const res = await fetch(SEND_OTP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: clientPhone, otp: newOtp })
+        });
+        const resData = await res.json();
+        if (resData.success) {
+          await supabase.from('deals').update({ otp_status: 'sent' }).eq('id', dealDocId);
+          if (resData.demo_mode) {
+            showAlert('alertBox','info','[DEMO] New OTP: ' + resData.demo_otp);
+          } else {
+            showAlert('alertBox','success','New OTP sent to your phone!');
+          }
+        } else {
+          showAlert('alertBox','warning','OTP regenerated but SMS delivery may have failed.');
+        }
+      } else {
+        showAlert('alertBox','warning','OTP regenerated. Phone not found — check Supabase dashboard.');
+      }
+    } catch(e) {
+      showAlert('alertBox','error','Failed to resend OTP: ' + e.message);
+    }
+    setTimeout(() => { resendBtn.disabled = false; resendBtn.textContent = "Didn't receive? Resend OTP"; }, 5000);
+  });
+
+  // Dispute button is now a link to dispute.html — no JS handler needed
+});
+</script>
+<script type="module">
+// Universal Clean Logout Handler
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  try {
+    if (window.supabase && window.supabase.auth) {
+      await window.supabase.auth.signOut();
+    }
+  } catch(e) {}
+  const isInPages = window.location.pathname.includes('/pages/');
+  window.location.replace(isInPages ? '../index.html' : 'index.html');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow — Deal Workspace & Milestone Tracker</title>
+<link rel="stylesheet" href="../css/style.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --gold: #f59e0b;
+    --gold-light: #fbbf24;
+    --gold-dim: rgba(245,158,11,0.12);
+    --green: #10b981;
+    --green-dim: rgba(16,185,129,0.12);
+    --cyan: #38bdf8;
+    --border: rgba(255,255,255,0.1);
+    --border-light: rgba(255,255,255,0.16);
+    --card: #111827;
+    --card-hover: #162032;
+    --text: #f8fafc;
+    --text2: #94a3b8;
+    --text3: #64748b;
+  }
+
+  .status-hero {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+  }
+  .status-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--cyan));
+  }
+  .status-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1.1;
+    margin: 0.75rem 0;
+    letter-spacing: -0.03em;
+  }
+  .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .sg-cell { background: var(--card); padding: 1rem 1.25rem; }
+  .sg-label { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 0.3rem; }
+  .sg-val { font-family: 'DM Mono', monospace; font-size: 0.88rem; color: var(--text); font-weight: 600; }
+
+  /* ── MILESTONE RELEASE TRACKER TABLE ── */
+  .ms-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.3);
+  }
+  .ms-card-header {
+    padding: 1.1rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.02);
+  }
+  .ms-card-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .ms-table { width: 100%; border-collapse: collapse; }
+  .ms-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0.85rem 1.25rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.25);
+  }
+  .ms-table td {
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+    vertical-align: middle;
+  }
+  .ms-table tr:last-child td { border-bottom: none; }
+  .ms-table tr:hover td { background: rgba(255,255,255,0.02); }
+  
+  .ms-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 0.95rem;
+  }
+  .ms-name {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+    letter-spacing: -0.01em;
+  }
+  .ms-desc {
+    font-size: 0.76rem;
+    color: var(--text2);
+    line-height: 1.45;
+  }
+  .ms-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .sc-done { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+  .sc-active { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
+  .sc-pending { background: rgba(255,255,255,0.04); color: var(--text3); border: 1px solid var(--border); }
+
+  /* ── SLEEK ESCROW TRANSACTION TIMELINE ── */
+  .timeline-card {
+    background: #0d131f;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.6rem 1.75rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.3);
+  }
+  .tl-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.6rem;
+  }
+  .tl-eyebrow::before {
+    content: '⚡';
+    font-size: 0.85rem;
+  }
+  
+  .tl-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    position: relative;
+  }
+  .tl-feed::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    bottom: 14px;
+    left: 12px;
+    width: 1px;
+    background: rgba(255,255,255,0.08);
+    z-index: 0;
+  }
+  .tl-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    position: relative;
+    z-index: 1;
+  }
+  .tl-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    transition: all 0.3s;
+  }
+  .ti-done {
+    background: #10b981;
+    color: #000;
+    box-shadow: 0 0 12px rgba(16,185,129,0.5);
+  }
+  .ti-active {
+    background: rgba(245,158,11,0.15);
+    border: 1.5px solid var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 10px rgba(245,158,11,0.4);
+    animation: pulseActive 2s infinite;
+  }
+  .ti-pending {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text3);
+  }
+  @keyframes pulseActive { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+  .tl-body { flex: 1; }
+  .tl-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    margin-bottom: 0.15rem;
+  }
+  .tl-sub {
+    font-size: 0.8rem;
+    color: var(--text2);
+    line-height: 1.45;
+  }
+  .tl-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text3);
+    margin-top: 0.3rem;
+  }
+
+  .walkthrough-banner {
+    background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(56,189,248,0.08));
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 12px;
+    padding: 1.3rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  /* Toast Notifications */
+  .toast-stack {
+    position: fixed;
+    top: 76px;
+    right: 1.5rem;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 320px;
+  }
+  .toast {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: rgba(17,24,39,0.96);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 0.9rem 1.1rem;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  @keyframes toastIn { from { transform: translateX(110%) scale(0.95); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
+  .toast.t-green { border-left: 3px solid #10b981; }
+  .t-title { font-size: 0.8125rem; font-weight: 700; color: #fff; margin-bottom: 0.15rem; }
+  .t-sub { font-size: 0.75rem; color: var(--text2); line-height: 1.4; }
+
+  @media (max-width: 768px) {
+    .page-wrap { padding: 1.5rem 0.8rem 3rem !important; }
+    .status-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .status-hero { padding: 1.25rem 1rem; }
+    .ms-card-header { padding: 0.9rem 1rem; }
+    .ms-table th, .ms-table td { padding: 0.75rem 0.6rem; font-size: 0.78rem; }
+    .ms-name { font-size: 0.84rem; }
+    .ms-desc { display: none; }
+    .toast-stack { right: 1rem; left: 1rem; width: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toast-stack" id="toasts"></div>
+
+<nav class="topnav">
+  <a href="client-dashboard.html" class="nav-logo">Nex<span>row</span></a>
+  <div class="nav-right">
+    <a href="how-it-works.html" class="nav-link" id="navWalkthroughLink">Escrow Walkthrough</a>
+    <a href="client-dashboard.html" class="nav-link">Client Portal</a>
+    <span class="nav-user" id="navUser"></span>
+    <button class="nav-logout" id="logoutBtn">Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+<div class="page-wrap" style="padding-top:2.5rem;max-width:680px">
+  <div style="margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:1rem">
+      <a href="how-it-works.html" id="backToWalkthroughBtn" style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold);text-decoration:none;font-weight:700">← Escrow Walkthrough</a>
+      <a href="client-dashboard.html" style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text3);text-decoration:none">Dashboard</a>
+    </div>
+    <div class="tag" style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold)">// Deal Workspace</div>
+  </div>
+
+  <div id="alertBox"></div>
+  <div id="loading" class="flex-center" style="padding:4rem"><div class="spinner"></div></div>
+  <div id="content" style="display:none"></div>
+</div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = 'https://qhcxwwobfqsecwqsvwid.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoY3h3d29iZnFzZWN3cXN2d2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODc0NzQsImV4cCI6MjA5NDc2MzQ3NH0.ZIcAU6PjSwEHeGZtD8B8NKJEd3YifgZa7S7hR9zbkMM';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const isRoot = !window.location.pathname.includes('/pages/');
+
+async function requireAuth(callback) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const localUser = JSON.parse(localStorage.getItem('sx_active_user') || 'null');
+  const activeUser = session?.user || localUser;
+  if (!activeUser) {
+    window.location.href = '../index.html';
+    return;
+  }
+  callback(activeUser);
+}
+
+function setNavUser(user) {
+  const el = document.getElementById('navUser');
+  if (el && user && user.email) el.textContent = user.email.length > 24 ? user.email.slice(0, 22) + '…' : user.email;
+}
+
+function setupLogout() {
+  const btn = document.getElementById('logoutBtn');
+  if (btn) btn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = isRoot ? 'index.html' : '../index.html';
+  });
+}
+
+function formatINR(amount) { return '₹' + Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+function formatDate(ts) {
+  if (!ts) return '07 Aug 2026, 10:13 pm';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function toast(cls, title, sub, icon) {
+  const stack = document.getElementById('toasts');
+  if (!stack) return;
+  const el = document.createElement('div');
+  el.className = 'toast ' + cls;
+  el.innerHTML = `<span style="font-size:1.2rem;flex-shrink:0;margin-top:0.05rem">${icon||'🔔'}</span><div><div class="t-title">${title}</div><div class="t-sub">${sub}</div></div>`;
+  stack.appendChild(el);
+  setTimeout(() => el.style.transition = 'opacity 0.4s, transform 0.4s', 3200);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(110%)'; }, 3500);
+  setTimeout(() => el.remove(), 4000);
+}
+
+const STATUS = {
+  WAITING_FOR_CLIENT: { label: 'Waiting for Client', badge: 'badge-muted' },
+  CLIENT_JOINED:      { label: 'Client Joined',      badge: 'badge-cyan' },
+  PENDING:            { label: 'Pending Payment',    badge: 'badge-muted' },
+  LOCKED:             { label: 'Payment Locked 🔒',   badge: 'badge-gold' },
+  DELIVERED:          { label: 'Delivered 📦',        badge: 'badge-cyan' },
+  VERIFYING:          { label: 'Verifying ⏳',        badge: 'badge-amber' },
+  RELEASED:           { label: 'Payment Released ✅', badge: 'badge-green' },
+  DISPUTED:           { label: 'Disputed ⚠',          badge: 'badge-red' },
+};
+
+const params = new URLSearchParams(window.location.search);
+const dealDocId = params.get('id');
+let currentUser = null;
+window.currentDeal = null;
+
+requireAuth(async (user) => {
+  currentUser = user;
+  setNavUser(user);
+  setupLogout();
+
+  await loadDeal(user);
+});
+
+async function loadDeal(user) {
+  let d = null;
+
+  // 1. Try Supabase query
+  if (dealDocId) {
+    try {
+      const { data } = await supabase.from('deals').select('*').or(`id.eq.${dealDocId},deal_id.eq.${dealDocId},unique_code.eq.${dealDocId}`).maybeSingle();
+      if (data) d = data;
+    } catch(e) {}
+  }
+
+  // 2. Try local storage lookup
+  if (!d) {
+    const localDeals = JSON.parse(localStorage.getItem('sx_local_deals') || '[]');
+    if (dealDocId) {
+      d = localDeals.find(item => item.id === dealDocId || item.deal_id === dealDocId || item.unique_code === dealDocId);
+    }
+    if (!d && localDeals.length > 0) {
+      d = localDeals[0];
+    }
+  }
+
+  // 3. Fallback to default / Priya Patel or Rohan Mehta deal
+  if (!d) {
+    const lastDeal = JSON.parse(localStorage.getItem('sx_last_created_deal') || 'null');
+    const selFl = JSON.parse(localStorage.getItem('sx_selected_freelancer') || 'null');
+    d = {
+      id: lastDeal?.dealId || 'SX-PRIYA-2026',
+      deal_id: lastDeal?.dealId || 'SX-PRIYA-2026',
+      unique_code: lastDeal?.uniqueCode || 'SUPX-36000',
+      title: lastDeal?.title || 'UI/UX Design & Mobile Prototype',
+      description: lastDeal?.description || 'End-to-end UX research, wireframes, high-fidelity Figma design system and interactive prototype.',
+      budget: lastDeal?.budget || 36000,
+      amount: lastDeal?.budget || 36000,
+      deadline: '21 Days',
+      status: 'LOCKED',
+      freelancer_name: selFl?.name || lastDeal?.freelancer?.name || 'Priya Patel',
+      freelancer_email: selFl?.email || lastDeal?.freelancer?.email || 'priya@supremex.io',
+      client_name: user?.user_metadata?.name || user.email,
+      client_email: user.email || 'akeel@gamil.com',
+      created_at: new Date().toISOString()
+    };
+  }
+
+  window.currentDeal = d;
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+
+  // Setup Back to Walkthrough URL with updated client & freelancer details
+  const selFl = JSON.parse(localStorage.getItem('sx_selected_freelancer') || 'null');
+  const flName = d?.freelancer_name || selFl?.name || 'Priya Patel';
+  const flEmail = d?.freelancer_email || selFl?.email || 'priya@supremex.io';
+  const flId = selFl?.id || 2;
+  const projectTitle = d?.title || 'UI/UX Design & Mobile Prototype';
+  const projectBudget = d?.budget || d?.amount || 36000;
+  const projectDesc = d?.description || '';
+
+  const walkthroughUrl = `how-it-works.html?fid=${flId}&fname=${encodeURIComponent(flName)}&femail=${encodeURIComponent(flEmail)}&dealId=${d?.id || dealDocId || ''}&budget=${projectBudget}&title=${encodeURIComponent(projectTitle)}&desc=${encodeURIComponent(projectDesc)}`;
+  
+  const backLink = document.getElementById('backToWalkthroughBtn');
+  if (backLink) backLink.href = walkthroughUrl;
+  const navLink = document.getElementById('navWalkthroughLink');
+  if (navLink) navLink.href = walkthroughUrl;
+
+  renderDeal(d, user, walkthroughUrl);
+}
+
+function renderDeal(d, user, walkthroughUrl) {
+  const isFreelancer = d.freelancer_id === user.id || d.freelancer_email === user.email;
+  const s = STATUS[d.status] || STATUS.LOCKED;
+  const content = document.getElementById('content');
+  const totalAmount = Number(d.budget || d.amount || 36000);
+
+  const flName = d.freelancer_name || 'Priya Patel';
+  const clientEmail = d.client_email || user.email || 'akeel@gamil.com';
+
+  // Calculate 30% / 40% / 30% milestone splits
+  const m1Amt = Math.round(totalAmount * 0.30);
+  const m2Amt = Math.round(totalAmount * 0.40);
+  const m3Amt = totalAmount - m1Amt - m2Amt;
+
+  // Custom milestone deliverables based on freelancer or role
+  let m1Title = 'User Journeys & Wireframes';
+  let m1Desc = 'Information architecture, user flow mapping & lo-fi wireframes';
+  let m2Title = 'High-Fidelity Design System';
+  let m2Desc = 'Polished Figma screens, component variants, auto-layout & typography';
+  let m3Title = 'Interactive Prototype & Dev Handoff';
+  let m3Desc = 'Clickable prototype, asset export kit & developer documentation';
+
+  if (flName.includes('Rohan')) {
+    m1Title = 'Brand Moodboard & 3 Concepts';
+    m1Desc = 'Creative direction, typography pairing & 3 unique logo sketches';
+    m2Title = 'Vector Logo Suite & Color Palette';
+    m2Desc = 'Scalable vector masters (AI, EPS, SVG) & primary brand colors';
+    m3Title = 'Brand Guidelines Book & Handover';
+    m3Desc = 'Comprehensive PDF brand guidelines, icon kit & print-ready assets';
+  } else if (flName.includes('Aarav') || flName.includes('Dev')) {
+    m1Title = 'Architecture & UI Components';
+    m1Desc = 'System architecture, responsive UI components & database schema';
+    m2Title = 'Backend REST API & Payment Engine';
+    m2Desc = 'Secure API endpoints, JWT authentication & Razorpay checkout';
+    m3Title = 'Cloud Deployment & Handover';
+    m3Desc = 'Production deployment, CI/CD pipeline & source code transfer';
+  }
+
+  content.innerHTML = `
+    <!-- Top Interactive Walkthrough Banner -->
+    <div class="walkthrough-banner fade-up">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;font-weight:600">// Live Escrow Walkthrough</div>
+          <h3 style="font-size:1.15rem;margin:0.2rem 0;color:var(--text)">Interactive Deal Flow for ${esc(flName)}</h3>
+        </div>
+        <a href="${walkthroughUrl}" class="btn btn-gold btn-sm">🚀 Open Walkthrough →</a>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text2);margin:0">Test live chat negotiation, multi-sig escrow locking, milestone approvals, and AI delivery verification for this deal.</p>
+    </div>
+
+    <!-- Deal Summary Card -->
+    <div class="status-hero fade-up">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase">${d.unique_code || d.deal_id || 'SX-PRIYA-2026'}</div>
+          <h2 style="margin:0.4rem 0;font-size:1.4rem">${esc(d.title)}</h2>
+        </div>
+        <span class="badge ${s.badge}">${s.label}</span>
+      </div>
+      <div class="status-amount">${formatINR(totalAmount)}</div>
+      <p style="font-size:0.82rem;color:var(--text2)">${esc(d.description || 'Escrow protected deal deliverables and phased milestone release.')}</p>
+    </div>
+
+    <div class="status-grid fade-up">
+      <div class="sg-cell"><div class="sg-label">Assigned Freelancer</div><div class="sg-val">${esc(flName)}</div></div>
+      <div class="sg-cell"><div class="sg-label">Client</div><div class="sg-val">${esc(clientEmail)}</div></div>
+      <div class="sg-cell"><div class="sg-label">Deadline</div><div class="sg-val">${d.deadline || '21 Days'}</div></div>
+      <div class="sg-cell"><div class="sg-label">Protection Level</div><div class="sg-val" style="color:var(--green)">100% Multi-Sig Escrow</div></div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         MILESTONE RELEASE TRACKER TABLE (Exactly matching user format!)
+    ────────────────────────────────────────────────────────────── -->
+    <div class="ms-card fade-up">
+      <div class="ms-card-header">
+        <div class="ms-card-title">📊 Milestone Release Tracker</div>
+        <span class="badge badge-gold">Phased Releases</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="ms-table">
+          <thead>
+            <tr>
+              <th style="width:50px">#</th>
+              <th>Deliverable Scope</th>
+              <th style="width:110px">Amount</th>
+              <th style="width:130px">Status</th>
+              <th style="width:140px">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="ms-num" style="color:var(--green)">M1</span></td>
+              <td>
+                <div class="ms-name">${m1Title}</div>
+                <div class="ms-desc">${m1Desc}</div>
+              </td>
+              <td><div class="ms-amount" style="color:var(--green)">${formatINR(m1Amt)}</div></td>
+              <td><span class="status-chip sc-done" id="m1ChipStatus">Released ✓</span></td>
+              <td><span style="color:var(--green);font-weight:700;font-size:0.84rem">Paid ✓</span></td>
+            </tr>
+            <tr>
+              <td><span class="ms-num" style="color:var(--gold)">M2</span></td>
+              <td>
+                <div class="ms-name">${m2Title}</div>
+                <div class="ms-desc">${m2Desc}</div>
+              </td>
+              <td><div class="ms-amount" style="color:var(--gold)">${formatINR(m2Amt)}</div></td>
+              <td><span class="status-chip sc-active" id="m2ChipStatus">Verifying ⏳</span></td>
+              <td>
+                <button class="btn btn-success btn-sm" id="btnReleaseM2" onclick="approveMilestone2('${flName}', ${m2Amt})">Approve & Release</button>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="ms-num" style="color:var(--text3)">M3</span></td>
+              <td>
+                <div class="ms-name">${m3Title}</div>
+                <div class="ms-desc">${m3Desc}</div>
+              </td>
+              <td><div class="ms-amount" style="color:var(--text2)">${formatINR(m3Amt)}</div></td>
+              <td><span class="status-chip sc-pending" id="m3ChipStatus">Pending Final Delivery</span></td>
+              <td><span style="color:var(--text3);font-size:0.78rem;font-family:'DM Mono',monospace">Requires OTP</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         ⚡ ESCROW TRANSACTION TIMELINE (Exactly matching user screenshot!)
+    ────────────────────────────────────────────────────────────── -->
+    <div class="timeline-card fade-up">
+      <div class="tl-eyebrow">ESCROW TRANSACTION TIMELINE</div>
+      <div class="tl-feed">
+        
+        <!-- Step 1 -->
+        <div class="tl-item">
+          <div class="tl-icon ti-done" id="tlIcon1">✓</div>
+          <div class="tl-body">
+            <div class="tl-title">Deal Created & Freelancer Matched</div>
+            <div class="tl-sub">Assigned to ${esc(flName)}</div>
+            <div class="tl-time">07 Aug 2026, 10:13 pm</div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="tl-item">
+          <div class="tl-icon ti-done" id="tlIcon2">✓</div>
+          <div class="tl-body">
+            <div class="tl-title">Client Joined Escrow</div>
+            <div class="tl-sub">${esc(clientEmail)}</div>
+            <div class="tl-time">07 Aug 2026, 10:13 pm</div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="tl-item">
+          <div class="tl-icon ti-done" id="tlIcon3">✓</div>
+          <div class="tl-body">
+            <div class="tl-title">Payment Locked in Vault</div>
+            <div class="tl-sub">${formatINR(totalAmount)} secured in multi-sig vault</div>
+            <div class="tl-time">07 Aug 2026, 10:13 pm</div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="tl-item">
+          <div class="tl-icon ti-active" id="tlIcon4">●</div>
+          <div class="tl-body">
+            <div class="tl-title">Proof Delivered</div>
+            <div class="tl-sub">GitHub repo & live deployment</div>
+            <div class="tl-time" id="tlTime4">In Review</div>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="tl-item">
+          <div class="tl-icon ti-pending" id="tlIcon5">5</div>
+          <div class="tl-body">
+            <div class="tl-title">Multi-Source AI & OTP Verified</div>
+            <div class="tl-sub">Verified with 99% confidence score</div>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="tl-item">
+          <div class="tl-icon ti-pending" id="tlIcon6">6</div>
+          <div class="tl-body">
+            <div class="tl-title">Payment Released</div>
+            <div class="tl-sub">Transferred to ${esc(flName)}</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:0.8rem;margin-top:1.5rem" class="fade-up">
+      <a href="${walkthroughUrl}" class="btn btn-gold btn-full">🚀 Open Full Interactive Escrow Demo for ${esc(flName)} →</a>
+      <a href="client-dashboard.html" class="btn btn-secondary btn-full">Return to Client Dashboard</a>
+    </div>
+  `;
+}
+
+// Interactive Approve & Release Handler for Milestone 2 in Table
+window.approveMilestone2 = function(flName, amount) {
+  const btn = document.getElementById('btnReleaseM2');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Released ✓';
+    btn.className = 'btn btn-success btn-sm';
+  }
+
+  const chip = document.getElementById('m2ChipStatus');
+  if (chip) {
+    chip.textContent = 'Released ✓';
+    chip.className = 'status-chip sc-done';
+  }
+
+  // Update Timeline Step 4 to green checkmark
+  const tl4 = document.getElementById('tlIcon4');
+  if (tl4) {
+    tl4.className = 'tl-icon ti-done';
+    tl4.textContent = '✓';
+  }
+  const tlTime4 = document.getElementById('tlTime4');
+  if (tlTime4) {
+    tlTime4.textContent = '07 Aug 2026, 10:24 pm';
+  }
+
+  // Activate Step 5
+  const tl5 = document.getElementById('tlIcon5');
+  if (tl5) {
+    tl5.className = 'tl-icon ti-active';
+    tl5.textContent = '●';
+  }
+
+  // Celebration Confetti & Floating Coins
+  if (window.triggerPaymentCelebration) {
+    window.triggerPaymentCelebration(amount, flName);
+  }
+
+  // Push Client Portfolio Notification
+  try {
+    const notifs = JSON.parse(localStorage.getItem('sx_notifications') || '[]');
+    notifs.unshift({
+      id: 'notif_' + Date.now(),
+      title: 'Milestone 2 Released',
+      message: `Payment of ${formatINR(amount)} released to ${flName || 'freelancer'}.`,
+      icon: '💸',
+      badge: 'Milestone Paid',
+      time: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem('sx_notifications', JSON.stringify(notifs.slice(0, 30)));
+  } catch(e) {}
+
+  toast('t-green', `${formatINR(amount)} Released`, `Milestone 2 payment released to ${flName || 'freelancer'}!`, '💸');
+};
+
+// Celebration Confetti & Coin Trigger for Status Page
+window.triggerPaymentCelebration = function(amt, name) {
+  const canvas = document.getElementById('confettiCanvas') || document.createElement('canvas');
+  if (!canvas.id) {
+    canvas.id = 'confettiCanvas';
+    canvas.style.position = 'fixed';
+    canvas.style.inset = '0';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '99999';
+    document.body.appendChild(canvas);
+  }
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ['#f59e0b', '#fbbf24', '#10b981', '#38bdf8', '#a855f7', '#ffffff'];
+  for (let i = 0; i < 90; i++) {
+    particles.push({
+      x: canvas.width / 2, y: canvas.height * 0.4,
+      vx: (Math.random() - 0.5) * 16, vy: (Math.random() - 0.7) * 15,
+      size: Math.random() * 8 + 4, color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360, rSpeed: (Math.random() - 0.5) * 10,
+      opacity: 1, gravity: 0.35
+    });
+  }
+
+  function renderConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = 0;
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.rotation += p.rSpeed; p.opacity -= 0.014;
+      if (p.opacity > 0) {
+        alive++;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.globalAlpha = Math.max(0, p.opacity);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+        ctx.restore();
+      }
+    });
+    if (alive > 0) requestAnimationFrame(renderConfetti);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  renderConfetti();
+};
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+
+<!-- SupremeX Chat Widget -->
+<script type="module" src="../js/chat-widget.js"></script>
+<script type="module">
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  try {
+    if (window.supabase && window.supabase.auth) {
+      await window.supabase.auth.signOut();
+    }
+  } catch(e) {}
+  const isInPages = window.location.pathname.includes('/pages/');
+  window.location.replace(isInPages ? '../index.html' : 'index.html');
+});
+</script>
+</body>
+</html>

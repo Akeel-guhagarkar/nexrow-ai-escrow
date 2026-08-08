@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow AI — Intelligence Report</title>
+<meta name="description" content="Nexrow AI Document Intelligence Report — Full extraction, entity detection, and multi-provider search analysis."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #050b18;
+  --surface: #0c1628;
+  --card: rgba(15,26,50,0.85);
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #f1f5f9;
+  --text2: #94a3b8;
+  --text3: #475569;
+  --gold: #f59e0b;
+  --gold-light: #fbbf24;
+  --gold-dim: rgba(245,158,11,0.1);
+  --gold-dim2: rgba(245,158,11,0.18);
+  --gold-grad: linear-gradient(135deg,#f59e0b,#d97706);
+  --cyan: #38bdf8;
+  --cyan-dim: rgba(56,189,248,0.1);
+  --green: #10b981;
+  --green-dim: rgba(16,185,129,0.1);
+  --red: #ef4444;
+  --red-dim: rgba(239,68,68,0.1);
+  --purple: #a855f7;
+  --purple-dim: rgba(168,85,247,0.1);
+  --amber: #f59e0b;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.35);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245,158,11,0.07), transparent),
+              radial-gradient(ellipse 60% 40% at 80% 80%, rgba(56,189,248,0.04), transparent);
+  pointer-events: none; z-index: 0;
+}
+
+.container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1; }
+
+/* ── TOPNAV ── */
+.topnav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2rem; height: 64px; position: sticky; top: 0; z-index: 100;
+  background: rgba(5,11,24,0.92); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-size: 1.3rem; font-weight: 800; color: var(--text); text-decoration: none; font-family: 'Outfit', sans-serif; }
+.nav-logo span { color: var(--gold); }
+.nav-right { display: flex; align-items: center; gap: 1rem; }
+.nav-back { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text3); text-decoration: none;
+  border: 1px solid var(--border2); padding: 0.35rem 0.8rem; border-radius: 20px; transition: all 0.2s; }
+.nav-back:hover { color: var(--gold); border-color: var(--gold); }
+
+/* ── PAGE HEADER ── */
+.page-header { padding: 2.5rem 0 2rem; border-bottom: 1px solid var(--border); margin-bottom: 0; }
+.header-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; }
+.header-title { font-size: clamp(1.8rem,3vw,2.8rem); font-weight: 900; margin-bottom: 0.6rem;
+  background: linear-gradient(135deg, #fff 0%, #f59e0b 60%, #38bdf8 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.header-sub { font-size: 0.92rem; color: var(--text2); max-width: 600px; }
+
+/* ── SUMMARY STATS ── */
+.stat-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin: 1.8rem 0; }
+@media(max-width:900px){ .stat-strip{ grid-template-columns: repeat(3,1fr); } }
+@media(max-width:600px){ .stat-strip{ grid-template-columns: repeat(2,1fr); } }
+.stat-card {
+  background: var(--card); backdrop-filter: blur(16px);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.2rem 1.4rem; display: flex; flex-direction: column; gap: 0.3rem;
+}
+.stat-card .val { font-size: 1.8rem; font-weight: 800; font-family: 'JetBrains Mono',monospace; }
+.stat-card .lbl { font-size: 0.72rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+.val-gold { color: var(--gold); }
+.val-green { color: var(--green); }
+.val-cyan { color: var(--cyan); }
+.val-purple { color: var(--purple); }
+
+/* ── TAB NAVIGATION ── */
+.tab-nav {
+  display: flex; gap: 0; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 2rem; overflow-x: auto;
+}
+.tab-btn {
+  flex: 1; min-width: 100px; padding: 0.9rem 1.2rem;
+  font-family: 'Outfit', sans-serif; font-size: 0.82rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  background: none; border: none; border-right: 1px solid var(--border);
+  color: var(--text3); cursor: pointer; transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:last-child { border-right: none; }
+.tab-btn:hover { background: var(--gold-dim2); color: var(--gold); }
+.tab-btn.active { background: var(--gold-grad); color: #000; font-weight: 700; }
+.tab-panel { display: none; animation: fadeIn 0.3s ease; }
+.tab-panel.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+/* ── CARDS ── */
+.card {
+  background: var(--card); backdrop-filter: blur(16px);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 1.2rem;
+}
+.card-title { font-size: 0.72rem; font-family: 'JetBrains Mono',monospace;
+  letter-spacing: 0.15em; text-transform: uppercase; color: var(--text3); margin-bottom: 1.2rem; }
+.card-lg { padding: 2rem; }
+
+/* ── PROVIDER COMPARISON ── */
+.provider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+@media(max-width:760px){ .provider-grid{ grid-template-columns: 1fr; } }
+
+.provider-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.6rem; }
+.provider-name { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.3rem; }
+.provider-badge { font-family: 'JetBrains Mono',monospace; font-size: 0.68rem; display: inline-flex;
+  align-items: center; gap: 0.4rem; padding: 0.25rem 0.7rem; border-radius: 20px;
+  margin-bottom: 1rem; }
+.badge-running { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
+.badge-done { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.badge-fail { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.badge-extract { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(168,85,247,0.3); }
+
+.progress-bar-wrap { background: rgba(255,255,255,0.05); border-radius: 8px; height: 10px; overflow: hidden; margin: 0.6rem 0; }
+.progress-bar { height: 100%; border-radius: 8px; background: var(--gold-grad); transition: width 0.5s ease; }
+.progress-bar.purple { background: linear-gradient(135deg,#a855f7,#7c3aed); }
+.progress-bar.cyan { background: linear-gradient(135deg,#38bdf8,#0284c7); }
+
+.meta-row { display: flex; justify-content: space-between; font-family: 'JetBrains Mono',monospace;
+  font-size: 0.72rem; color: var(--text3); margin-top: 0.5rem; }
+
+/* ── TABLES ── */
+.table-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; overflow-x: auto; }
+.ai-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.ai-table th { background: rgba(15,26,50,0.9); font-family: 'JetBrains Mono',monospace;
+  font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text3); padding: 0.9rem 1.1rem; border-bottom: 1px solid var(--border); text-align: left; }
+.ai-table td { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+.ai-table tr:last-child td { border-bottom: none; }
+.ai-table tr:hover td { background: rgba(255,255,255,0.02); }
+.code-link { font-family: 'JetBrains Mono',monospace; font-size: 0.75rem; color: var(--cyan); text-decoration: none;
+  display: inline-block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.code-link:hover { text-decoration: underline; }
+
+/* ── BADGES ── */
+.badge { font-family:'JetBrains Mono',monospace; font-size:0.68rem; padding:0.25rem 0.65rem;
+  border-radius:20px; display:inline-block; font-weight:600; }
+.b-gold { background:var(--gold-dim); color:var(--gold); border:1px solid rgba(245,158,11,0.3); }
+.b-green { background:var(--green-dim); color:var(--green); border:1px solid rgba(16,185,129,0.3); }
+.b-cyan { background:var(--cyan-dim); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); }
+.b-purple { background:var(--purple-dim); color:var(--purple); border:1px solid rgba(168,85,247,0.3); }
+.b-red { background:var(--red-dim); color:var(--red); border:1px solid rgba(239,68,68,0.3); }
+.b-muted { background:rgba(255,255,255,0.05); color:var(--text3); border:1px solid var(--border); }
+
+/* ── CONFIDENCE GAUGE ── */
+.conf-gauge-wrap { position: relative; width: 140px; height: 140px; margin: 0 auto 1rem; }
+.conf-gauge-svg { transform: rotate(-90deg); }
+.conf-gauge-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 12; }
+.conf-gauge-fill { fill: none; stroke: url(#confGrad); stroke-width: 12;
+  stroke-linecap: round; transition: stroke-dashoffset 1.2s ease; }
+.conf-center { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; }
+.conf-val { font-size: 1.8rem; font-weight: 800; color: var(--gold); line-height: 1; }
+.conf-lbl { font-size: 0.62rem; font-family: 'JetBrains Mono',monospace;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); }
+
+/* ── TIMELINE ── */
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0;
+  width:2px; background: linear-gradient(to bottom, var(--gold), var(--cyan), transparent); }
+.tl-item { position: relative; padding: 0.9rem 0; }
+.tl-dot { position: absolute; left: -1.55rem; top: 1.1rem; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--gold); border: 2px solid var(--bg); box-shadow: 0 0 8px rgba(245,158,11,0.5); }
+.tl-dot.cyan { background: var(--cyan); box-shadow: 0 0 8px rgba(56,189,248,0.5); }
+.tl-dot.purple { background: var(--purple); box-shadow: 0 0 8px rgba(168,85,247,0.5); }
+.tl-dot.green { background: var(--green); box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+.tl-event { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; }
+.tl-desc { font-size: 0.8rem; color: var(--text2); }
+.tl-time { font-family: 'JetBrains Mono',monospace; font-size: 0.68rem; color: var(--text3); margin-top: 0.2rem; }
+
+/* ── ENTITY CHIPS ── */
+.entity-grid { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.entity-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.9rem;
+  border-radius: 20px; font-size: 0.78rem; font-weight: 600; border: 1px solid var(--border); }
+
+/* ── NORMALIZED DATA CARD ── */
+.norm-field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 0.8rem; }
+.norm-field { background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 0.8rem 1rem; }
+.norm-field-label { font-family: 'JetBrains Mono',monospace; font-size: 0.65rem;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 0.3rem; }
+.norm-field-value { font-size: 0.88rem; font-weight: 600; word-break: break-word; }
+.norm-field-conf { font-family: 'JetBrains Mono',monospace; font-size: 0.65rem; color: var(--gold); margin-top: 0.25rem; }
+
+/* ── SKELETON LOADER ── */
+.skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* ── TRIGGER BTN ── */
+.trigger-btn { display: inline-flex; align-items: center; gap: 0.6rem;
+  background: var(--gold-grad); color: #000; font-family: 'Outfit',sans-serif;
+  font-size: 0.88rem; font-weight: 700; border: none; border-radius: 10px;
+  padding: 0.9rem 2rem; cursor: pointer; transition: all 0.25s;
+  box-shadow: 0 4px 20px rgba(245,158,11,0.35); }
+.trigger-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(245,158,11,0.5); }
+.trigger-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── RUNNING INDICATOR ── */
+.pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:0.6} }
+
+/* ── SUMMARY CARDS ── */
+.summary-tabs { display: flex; gap: 0.4rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.sum-btn { padding: 0.5rem 1rem; font-size: 0.78rem; font-weight: 600; font-family:'Outfit',sans-serif;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 20px; color: var(--text3);
+  cursor: pointer; transition: all 0.2s; }
+.sum-btn.active { background: var(--purple-dim); color: var(--purple); border-color: rgba(168,85,247,0.4); }
+.summary-content { background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 1.2rem 1.4rem; font-size: 0.9rem;
+  color: var(--text2); line-height: 1.7; display: none; }
+.summary-content.active { display: block; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){ .container{ padding: 0 1rem; } }
+
+/* ── AI DEMO TRIGGER SECTION ── */
+.demo-section {
+  background: linear-gradient(135deg, rgba(245,158,11,0.05), rgba(56,189,248,0.05));
+  border: 1px solid var(--border2); border-radius: var(--radius); padding: 2rem;
+  text-align: center; margin-bottom: 2rem;
+}
+</style>
+<script>
+(function() {
+  const t = localStorage.getItem('supremex-theme') || 'dark';
+  if (t === 'light') document.documentElement.classList.add('light-theme');
+})();
+</script>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="#" class="nav-logo">Supreme<span>X</span> <span style="font-size:0.65rem;color:var(--purple);background:var(--purple-dim);padding:0.15rem 0.5rem;border-radius:10px;border:1px solid rgba(168,85,247,0.3);margin-left:0.4rem">AI REPORT</span></a>
+  <div class="nav-right">
+    <a href="javascript:history.back()" class="nav-back">← Back to Deal</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <div class="header-badge"><span class="pulse"></span> Document Intelligence Report</div>
+    <h1 class="header-title">🧠 SupremeX AI Analysis</h1>
+    <p class="header-sub" id="reportSubtitle">Parallel provider search · Document extraction · Entity detection · Intelligence summaries</p>
+  </div>
+
+  <!-- STAT STRIP -->
+  <div class="stat-strip" id="statStrip">
+    <div class="stat-card"><div class="val val-gold skeleton" style="width:60px;height:32px" id="statConf"></div><div class="lbl">Confidence</div></div>
+    <div class="stat-card"><div class="val val-cyan skeleton" style="width:40px;height:32px" id="statSources"></div><div class="lbl">Sources Found</div></div>
+    <div class="stat-card"><div class="val val-green skeleton" style="width:40px;height:32px" id="statEntities"></div><div class="lbl">Entities Detected</div></div>
+    <div class="stat-card"><div class="val val-purple skeleton" style="width:60px;height:32px" id="statExtTime"></div><div class="lbl">Extraction Time</div></div>
+    <div class="stat-card"><div class="val val-gold skeleton" style="width:40px;height:32px" id="statDupes"></div><div class="lbl">Dupes Removed</div></div>
+  </div>
+
+  <!-- DEMO TRIGGER (when no deal ID in URL) -->
+  <div class="demo-section" id="demoSection">
+    <div style="font-size:2rem;margin-bottom:0.8rem">⚡</div>
+    <h2 style="font-size:1.2rem;margin-bottom:0.5rem">Run AI Intelligence Demo</h2>
+    <p style="color:var(--text2);font-size:0.88rem;margin-bottom:1.5rem">Execute the full AI Engine: Parallel Search Providers → Router → Document Intelligence Extraction</p>
+    <button class="trigger-btn" id="runDemoBtn" onclick="runAIDemo()">🚀 Run Full AI Demo</button>
+  </div>
+
+  <!-- LIVE PROGRESS -->
+  <div class="card" id="liveProgressCard" style="display:none">
+    <div class="card-title">// Live Execution</div>
+    <div id="liveLog" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text2);line-height:1.9;max-height:200px;overflow-y:auto"></div>
+    <div style="margin-top:1rem">
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:0.4rem" id="overallStepLabel">Initializing...</div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="overallProgressBar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- PROVIDER PARALLEL EXECUTION -->
+  <div class="provider-grid" id="providerGrid" style="margin-bottom:1.2rem;display:none">
+    <div class="provider-card" id="pCardA">
+      <div class="provider-name">🔍 Search Provider A</div>
+      <span class="provider-badge badge-running" id="pBadgeA">⏳ Waiting</span>
+      <div class="progress-bar-wrap"><div class="progress-bar cyan" id="pBarA" style="width:0%"></div></div>
+      <div class="meta-row"><span id="pStepA">—</span><span id="pTimeA">0ms</span></div>
+    </div>
+    <div class="provider-card" id="pCardB">
+      <div class="provider-name">🔍 Search Provider B</div>
+      <span class="provider-badge badge-running" id="pBadgeB">⏳ Waiting</span>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="pBarB" style="width:0%"></div></div>
+      <div class="meta-row"><span id="pStepB">—</span><span id="pTimeB">0ms</span></div>
+    </div>
+    <div class="provider-card" id="pCardRouter">
+      <div class="provider-name">🧭 AI Router</div>
+      <span class="provider-badge badge-running" id="pBadgeRouter">⏳ Waiting</span>
+      <div class="progress-bar-wrap"><div class="progress-bar cyan" id="pBarRouter" style="width:0%"></div></div>
+      <div class="meta-row"><span id="pStepRouter">Pending</span><span></span></div>
+    </div>
+    <div class="provider-card" id="pCardExt">
+      <div class="provider-name">🧠 Extraction Provider</div>
+      <span class="provider-badge badge-extract" id="pBadgeExt">⏳ Waiting</span>
+      <div class="progress-bar-wrap"><div class="progress-bar purple" id="pBarExt" style="width:0%"></div></div>
+      <div class="meta-row"><span id="pStepExt">Pending</span><span id="pTimeExt">0ms</span></div>
+    </div>
+  </div>
+
+  <!-- MAIN TABS -->
+  <div class="tab-nav" id="mainTabs" style="display:none">
+    <button class="tab-btn active" data-tab="overview">📊 Overview</button>
+    <button class="tab-btn" data-tab="providers">⚡ Providers</button>
+    <button class="tab-btn" data-tab="extraction">🧠 Extraction</button>
+    <button class="tab-btn" data-tab="results">🔍 Search Results</button>
+    <button class="tab-btn" data-tab="timeline">⏱️ Timeline</button>
+    <button class="tab-btn" data-tab="router">🧭 Router</button>
+    <button class="tab-btn" data-tab="logs">📜 Logs</button>
+  </div>
+
+  <!-- TAB: OVERVIEW -->
+  <div class="tab-panel active" id="tab-overview">
+    <div style="display:grid;grid-template-columns:280px 1fr;gap:1.2rem;align-items:start" class="overview-grid">
+      <div class="card" style="text-align:center">
+        <div class="card-title">Overall Confidence</div>
+        <div class="conf-gauge-wrap">
+          <svg class="conf-gauge-svg" width="140" height="140" viewBox="0 0 140 140">
+            <defs>
+              <linearGradient id="confGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#f59e0b"/>
+                <stop offset="100%" style="stop-color:#38bdf8"/>
+              </linearGradient>
+            </defs>
+            <circle class="conf-gauge-bg" cx="70" cy="70" r="55"/>
+            <circle class="conf-gauge-fill" id="confGaugeFill" cx="70" cy="70" r="55"
+                    stroke-dasharray="345.4" stroke-dashoffset="345.4"/>
+          </svg>
+          <div class="conf-center">
+            <div class="conf-val" id="confVal">—</div>
+            <div class="conf-lbl">Confidence</div>
+          </div>
+        </div>
+        <div style="font-size:0.8rem;color:var(--text2)" id="routerDecisionLabel">Awaiting analysis...</div>
+      </div>
+
+      <div>
+        <div class="card card-lg">
+          <div class="card-title">Intelligence Summary</div>
+          <div class="summary-tabs">
+            <button class="sum-btn active" onclick="showSummary('short',this)">Short</button>
+            <button class="sum-btn" onclick="showSummary('medium',this)">Medium</button>
+            <button class="sum-btn" onclick="showSummary('technical',this)">Technical</button>
+            <button class="sum-btn" onclick="showSummary('business',this)">Business</button>
+          </div>
+          <div class="summary-content active" id="sum-short">Awaiting extraction...</div>
+          <div class="summary-content" id="sum-medium"></div>
+          <div class="summary-content" id="sum-technical"></div>
+          <div class="summary-content" id="sum-business"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Deal Information</div>
+          <div style="display:flex;gap:2rem;flex-wrap:wrap;font-size:0.88rem">
+            <div><span style="color:var(--text3)">Deal ID: </span><span id="ov-dealId" class="badge b-gold">—</span></div>
+            <div><span style="color:var(--text3)">Title: </span><strong id="ov-title">—</strong></div>
+            <div><span style="color:var(--text3)">Completed: </span><span id="ov-completed" style="color:var(--text2)">—</span></div>
+            <div><span style="color:var(--text3)">Total Time: </span><span id="ov-time" style="color:var(--cyan)">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: PROVIDERS -->
+  <div class="tab-panel" id="tab-providers">
+    <div id="providerCompare"></div>
+  </div>
+
+  <!-- TAB: EXTRACTION -->
+  <div class="tab-panel" id="tab-extraction">
+    <div class="card">
+      <div class="card-title">// Extraction Statistics</div>
+      <div id="extStatGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.8rem;margin-bottom:1.5rem"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">// Detected Entities</div>
+      <div class="entity-grid" id="entityGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">// Normalized Document Data</div>
+      <div id="normDocSelector" style="margin-bottom:1rem;display:flex;gap:0.5rem;flex-wrap:wrap"></div>
+      <div id="normFieldGrid" class="norm-field-grid"></div>
+    </div>
+  </div>
+
+  <!-- TAB: SEARCH RESULTS -->
+  <div class="tab-panel" id="tab-results">
+    <div style="display:flex;gap:0.5rem;margin-bottom:1.2rem;flex-wrap:wrap" id="resultFilters">
+      <button class="sum-btn active" onclick="filterResults('all',this)">All</button>
+      <button class="sum-btn" onclick="filterResults('Repository',this)">Repository</button>
+      <button class="sum-btn" onclick="filterResults('Website',this)">Website</button>
+      <button class="sum-btn" onclick="filterResults('Portfolio',this)">Portfolio</button>
+      <button class="sum-btn" onclick="filterResults('Article',this)">Article</button>
+    </div>
+    <div class="table-wrap">
+      <table class="ai-table">
+        <thead><tr><th>Type</th><th>Title</th><th>URL</th><th>Source</th><th>Provider</th><th>Confidence</th></tr></thead>
+        <tbody id="resultsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: TIMELINE -->
+  <div class="tab-panel" id="tab-timeline">
+    <div class="card card-lg"><div class="timeline" id="timelineEl"></div></div>
+  </div>
+
+  <!-- TAB: ROUTER -->
+  <div class="tab-panel" id="tab-router">
+    <div id="routerContent"></div>
+  </div>
+
+  <!-- TAB: LOGS -->
+  <div class="tab-panel" id="tab-logs">
+    <div class="card">
+      <div class="card-title">// Execution Logs</div>
+      <div id="logsContent" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;line-height:2;max-height:500px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin:3rem 0">
+    <a href="javascript:history.back()" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text3);text-decoration:none">← Back to Deal</a>
+  </div>
+</div>
+
+<script type="module">
+import { aiService } from '../src/ai/services/AIService.js';
+
+// ── Utility ──────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const COLORS = { gold:'#f59e0b', cyan:'#38bdf8', green:'#10b981', purple:'#a855f7', red:'#ef4444' };
+
+function pct(v) { return (v * 100).toFixed(0) + '%'; }
+function ms(v) { return v < 1000 ? v + 'ms' : (v/1000).toFixed(2) + 's'; }
+
+function logLine(msg, color='#94a3b8') {
+  const el = $('liveLog');
+  el.innerHTML += `<div style="color:${color}">${new Date().toLocaleTimeString('en-US',{hour12:false})} &nbsp;${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function setProgress(val, label='') {
+  $('overallProgressBar').style.width = val + '%';
+  $('overallStepLabel').textContent = label;
+}
+
+// ── Tab switching ────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    $('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Summary switcher ─────────────────────────────────────────────
+window.showSummary = (type, btn) => {
+  document.querySelectorAll('.sum-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.summary-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  $('sum-' + type).classList.add('active');
+};
+
+// ── Result filtering ─────────────────────────────────────────────
+let allResults = [];
+window.filterResults = (type, btn) => {
+  document.querySelectorAll('#resultFilters .sum-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = type === 'all' ? allResults : allResults.filter(r => r.type === type);
+  renderResultsTable(filtered);
+};
+
+// ── Provider event subscriptions ─────────────────────────────────
+const providerStartTimes = {};
+
+aiService.subscribeToEngine(event => {
+  const { type } = event;
+
+  if (type === 'WORKFLOW_STARTED') {
+    $('demoSection').style.display = 'none';
+    $('liveProgressCard').style.display = 'block';
+    $('providerGrid').style.display = 'grid';
+    logLine('🚀 AI Workflow Started', COLORS.gold);
+    setProgress(5, 'AI Workflow Started');
+  }
+
+  if (type === 'PROVIDER_STARTED') {
+    providerStartTimes[event.providerName] = Date.now();
+    if (event.providerName.includes('Alpha') || event.providerName.includes('A (')) {
+      $('pBadgeA').className = 'provider-badge badge-running';
+      $('pBadgeA').textContent = '⚡ Running';
+      $('pStepA').textContent = 'Searching...';
+    } else {
+      $('pBadgeB').className = 'provider-badge badge-running';
+      $('pBadgeB').textContent = '⚡ Running';
+      $('pStepB').textContent = 'Searching...';
+    }
+    logLine(`▶ ${event.providerName} started`, COLORS.cyan);
+  }
+
+  if (type === 'PROVIDER_PROGRESS') {
+    const { provider, step, progress } = event;
+    const isA = provider?.includes('Alpha') || provider?.includes('A (');
+    const elapsed = ms(Date.now() - (providerStartTimes[provider] || Date.now()));
+    if (isA) {
+      $('pBarA').style.width = progress + '%';
+      $('pStepA').textContent = step;
+      $('pTimeA').textContent = elapsed;
+    } else {
+      $('pBarB').style.width = progress + '%';
+      $('pStepB').textContent = step;
+      $('pTimeB').textContent = elapsed;
+    }
+    logLine(`  → ${provider}: ${step}`, '#64748b');
+  }
+
+  if (type === 'PROVIDER_COMPLETED') {
+    const isA = event.providerName?.includes('Alpha') || event.providerName?.includes('A (');
+    if (isA) {
+      $('pBadgeA').className = 'provider-badge badge-done';
+      $('pBadgeA').textContent = '✅ Completed';
+      $('pBarA').style.width = '100%';
+    } else {
+      $('pBadgeB').className = 'provider-badge badge-done';
+      $('pBadgeB').textContent = '✅ Completed';
+      $('pBarB').style.width = '100%';
+    }
+    logLine(`✅ ${event.providerName} — ${event.results?.length || 0} sources found in ${ms(event.executionTimeMs)}`, COLORS.green);
+    setProgress(65, 'Parallel Search Complete');
+  }
+
+  if (type === 'ROUTER_STARTED') {
+    $('pBadgeRouter').textContent = '⚡ Running';
+    $('pBarRouter').style.width = '50%';
+    $('pStepRouter').textContent = 'Evaluating providers...';
+    logLine('🧭 AI Router evaluating results...', COLORS.gold);
+    setProgress(70, 'Router Running');
+  }
+
+  if (type === 'ROUTER_COMPLETED') {
+    $('pBadgeRouter').className = 'provider-badge badge-done';
+    $('pBadgeRouter').textContent = '✅ Completed';
+    $('pBarRouter').style.width = '100%';
+    $('pStepRouter').textContent = `Selected: ${event.routerDecision?.selectedProvider || '—'}`;
+    logLine(`🧭 Router selected "${event.routerDecision?.selectedProvider}" — ${event.routerDecision?.totalSourcesFound || 0} total sources`, COLORS.gold);
+  }
+
+  if (type === 'EXTRACTION_STARTED') {
+    $('pBadgeExt').textContent = '⚡ Running';
+    $('pStepExt').textContent = 'Initializing...';
+    logLine('🧠 Extraction Provider activated — Document Intelligence starting', COLORS.purple);
+    setProgress(80, 'Document Intelligence Engine Running');
+  }
+
+  if (type === 'EXTRACTION_PROGRESS') {
+    const { step, progress } = event;
+    $('pBarExt').style.width = progress + '%';
+    $('pStepExt').textContent = step;
+    $('pTimeExt').textContent = ms(0);
+    logLine(`  → Extraction: ${step}`, '#a855f7');
+  }
+
+  if (type === 'EXTRACTION_COMPLETED') {
+    const { extractionResult } = event;
+    $('pBadgeExt').className = 'provider-badge badge-done';
+    $('pBadgeExt').textContent = '✅ Completed';
+    $('pBarExt').style.width = '100%';
+    $('pStepExt').textContent = `${extractionResult?.metadata?.uniqueSourcesAfterDedup || 0} docs · ${extractionResult?.entities?.length || 0} entities`;
+    $('pTimeExt').textContent = ms(extractionResult?.executionTimeMs || 0);
+    logLine(`🧠 Extraction complete — ${extractionResult?.entities?.length || 0} entities detected in ${ms(extractionResult?.executionTimeMs || 0)}`, COLORS.purple);
+    setProgress(98, 'Finalizing Report');
+  }
+
+  if (type === 'WORKFLOW_COMPLETED') {
+    setProgress(100, '✅ AI Analysis Complete');
+    logLine('🎉 AI Workflow completed successfully', COLORS.gold);
+    renderReport(event.report);
+  }
+});
+
+// ── Render Complete Report ───────────────────────────────────────
+function renderReport(report) {
+  $('mainTabs').style.display = 'flex';
+
+  // Stat strip
+  $('statConf').innerHTML = pct(report.confidence || 0);
+  $('statConf').className = 'val val-gold';
+  $('statSources').innerHTML = (report.mergedResults?.length || 0);
+  $('statSources').className = 'val val-cyan';
+  $('statEntities').innerHTML = (report.entities?.length || 0);
+  $('statEntities').className = 'val val-green';
+  $('statExtTime').innerHTML = ms(report.extraction?.executionTimeMs || 0);
+  $('statExtTime').className = 'val val-purple';
+  $('statDupes').innerHTML = (report.extraction?.metadata?.duplicatesRemoved || 0);
+  $('statDupes').className = 'val val-gold';
+
+  // Confidence gauge
+  const conf = report.confidence || 0;
+  const circumference = 345.4;
+  $('confGaugeFill').style.strokeDashoffset = circumference - (circumference * conf);
+  $('confVal').textContent = pct(conf);
+  $('routerDecisionLabel').textContent = report.routerDecision?.decision || '—';
+
+  // Summaries
+  const s = report.summaries || {};
+  $('sum-short').textContent = s.short || '—';
+  $('sum-medium').textContent = s.medium || '—';
+  $('sum-technical').textContent = s.technical || '—';
+  $('sum-business').textContent = s.business || '—';
+
+  // Deal info
+  $('ov-dealId').textContent = report.dealId || '—';
+  $('ov-title').textContent = report.dealTitle || '—';
+  $('ov-completed').textContent = report.completedAt ? new Date(report.completedAt).toLocaleString() : '—';
+  $('ov-time').textContent = ms(report.executionTimeMs || 0) + ' (search) + ' + ms(report.extraction?.executionTimeMs || 0) + ' (extraction)';
+
+  // Providers tab
+  renderProviderComparison(report);
+
+  // Extraction tab
+  renderExtractionTab(report);
+
+  // Results tab
+  allResults = report.mergedResults || [];
+  renderResultsTable(allResults);
+
+  // Timeline
+  renderTimeline(report.timeline || []);
+
+  // Router tab
+  renderRouterTab(report);
+
+  // Logs
+  renderLogs(report.logs || []);
+}
+
+function renderProviderComparison(report) {
+  const html = (report.providers || []).map(p => `
+    <div class="provider-card" style="margin-bottom:1rem">
+      <div class="provider-name">${p.name}</div>
+      <span class="provider-badge ${p.status === 'COMPLETED' ? 'badge-done' : 'badge-fail'}">${p.status}</span>
+      <div style="margin-top:1rem;display:flex;gap:2rem;flex-wrap:wrap;font-size:0.85rem">
+        <div><span style="color:var(--text3)">Sources: </span><strong style="color:var(--gold)">${p.count}</strong></div>
+        <div><span style="color:var(--text3)">Time: </span><strong style="color:var(--cyan)">${ms(p.executionTimeMs)}</strong></div>
+        <div><span style="color:var(--text3)">Status: </span><strong style="color:var(--green)">${p.status}</strong></div>
+      </div>
+    </div>
+  `).join('');
+
+  $('providerCompare').innerHTML = '<div class="provider-grid">' + html + `
+    <div class="provider-card" style="grid-column:1/-1;background:var(--purple-dim);border-color:rgba(168,85,247,0.3)">
+      <div class="provider-name" style="color:var(--purple)">🧠 Extraction Provider (Document Intelligence)</div>
+      <div style="margin-top:0.8rem;display:flex;gap:2rem;flex-wrap:wrap;font-size:0.85rem">
+        <div><span style="color:var(--text3)">Time: </span><strong style="color:var(--purple)">${ms(report.extraction?.executionTimeMs || 0)}</strong></div>
+        <div><span style="color:var(--text3)">Status: </span><strong style="color:var(--green)">${report.extraction?.status || '—'}</strong></div>
+        <div><span style="color:var(--text3)">Entities: </span><strong style="color:var(--gold)">${report.entities?.length || 0}</strong></div>
+        <div><span style="color:var(--text3)">Dupes Removed: </span><strong style="color:var(--cyan)">${report.extraction?.metadata?.duplicatesRemoved || 0}</strong></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderExtractionTab(report) {
+  const stats = report.extraction?.statistics || {};
+  const statFields = [
+    { k: 'Total Sources', v: stats.totalSources || 0, color: 'var(--gold)' },
+    { k: 'Unique Sources', v: stats.uniqueSources || 0, color: 'var(--green)' },
+    { k: 'Duplicates Removed', v: stats.duplicatesRemoved || 0, color: 'var(--cyan)' },
+    { k: 'Avg Confidence', v: pct(stats.avgConfidence || 0), color: 'var(--purple)' },
+    { k: 'Languages Detected', v: (stats.languagesDetected || []).join(', ') || '—', color: 'var(--gold)' },
+    { k: 'Unique Domains', v: stats.uniqueDomains || 0, color: 'var(--cyan)' },
+    { k: 'Entities Total', v: stats.entitiesTotal || 0, color: 'var(--purple)' }
+  ];
+
+  $('extStatGrid').innerHTML = statFields.map(f => `
+    <div class="norm-field">
+      <div class="norm-field-label">${f.k}</div>
+      <div class="norm-field-value" style="color:${f.color}">${f.v}</div>
+    </div>
+  `).join('');
+
+  // Entities
+  const typeIcon = { ProgrammingLanguage:'💻', Framework:'🔧', Library:'📦', Technology:'⚙️', Repository:'📁', Website:'🌐', Person:'👤', Company:'🏢', Date:'📅', WEBSITE:'🌐' };
+  const typeBadge = { ProgrammingLanguage:'b-cyan', Framework:'b-gold', Library:'b-purple', Technology:'b-green', Repository:'b-gold', Website:'b-cyan', Person:'b-muted', Company:'b-muted', Date:'b-muted' };
+
+  $('entityGrid').innerHTML = (report.entities || []).map(e => `
+    <div class="entity-chip ${typeBadge[e.type] || 'b-muted'}">
+      ${typeIcon[e.type] || '•'} ${e.name} <span style="opacity:0.6;font-size:0.65rem">${pct(e.confidence)}</span>
+    </div>
+  `).join('') || '<span style="color:var(--text3)">No entities detected</span>';
+
+  // Normalized docs
+  const docs = report.normalizedData || [];
+  if (docs.length > 0) {
+    $('normDocSelector').innerHTML = docs.map((d, i) => `
+      <button class="sum-btn ${i === 0 ? 'active' : ''}" onclick="showNormDoc(${i}, this)">${d.sourceType || 'Doc ' + (i+1)}</button>
+    `).join('');
+    window._normDocs = docs;
+    window.showNormDoc = (idx, btn) => {
+      document.querySelectorAll('#normDocSelector .sum-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderNormDoc(window._normDocs[idx]);
+    };
+    renderNormDoc(docs[0]);
+  } else {
+    $('normFieldGrid').innerHTML = '<span style="color:var(--text3)">No normalized data available</span>';
+  }
+}
+
+function renderNormDoc(doc) {
+  const FIELD_LABELS = {
+    projectName:'Project Name', owner:'Owner', company:'Company', developer:'Developer',
+    repositoryName:'Repository', repositoryUrl:'Repo URL', repositoryVisibility:'Visibility',
+    stars:'Stars', forks:'Forks', commits:'Commits', readmeSummary:'README Summary',
+    websiteUrl:'Website URL', domain:'Domain', hostingPlatform:'Hosting', deploymentStatus:'Deploy Status',
+    framework:'Framework', programmingLanguages:'Languages', libraries:'Libraries',
+    technologyStack:'Tech Stack', version:'Version', lastUpdated:'Last Updated',
+    email:'Email', phone:'Phone', socialLinks:'Social Links',
+    description:'Description', keywords:'Keywords', language:'Language',
+    documentTitle:'Title', documentAuthor:'Author', mediaType:'Media Type',
+    fileSize:'File Size', detectedFileTypes:'File Types'
+  };
+
+  const entries = Object.entries(FIELD_LABELS).map(([key, label]) => {
+    const field = doc[key];
+    if (!field || field.value === null || field.value === undefined || field.value === 0 ||
+        (Array.isArray(field.value) && field.value.length === 0) ||
+        (typeof field.value === 'object' && !Array.isArray(field.value) && Object.keys(field.value).length === 0)) {
+      return '';
+    }
+    const val = Array.isArray(field.value) ? field.value.join(', ') :
+               (typeof field.value === 'object' ? JSON.stringify(field.value) : String(field.value));
+    return `
+      <div class="norm-field">
+        <div class="norm-field-label">${label}</div>
+        <div class="norm-field-value">${val}</div>
+        <div class="norm-field-conf">Confidence: ${pct(field.confidence || 0)}</div>
+      </div>
+    `;
+  }).filter(Boolean);
+
+  $('normFieldGrid').innerHTML = entries.join('') || '<span style="color:var(--text3)">No fields extracted</span>';
+}
+
+function renderResultsTable(results) {
+  const typeBadge = { Repository:'b-gold', Website:'b-cyan', Portfolio:'b-purple', Article:'b-green' };
+  $('resultsTableBody').innerHTML = results.map(r => `
+    <tr>
+      <td><span class="badge ${typeBadge[r.type] || 'b-muted'}">${r.type}</span></td>
+      <td><strong>${r.title || '—'}</strong></td>
+      <td><a href="${r.url}" target="_blank" class="code-link">${r.url}</a></td>
+      <td>${r.source || '—'}</td>
+      <td style="font-size:0.78rem;color:var(--text2)">${(r.providerName || '').replace('Search Provider ','P')}</td>
+      <td><span style="color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:0.8rem">${pct(r.confidence || 0)}</span></td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">No results found</td></tr>';
+}
+
+function renderTimeline(events) {
+  const dotColors = {
+    'AI Started':'', 'Extraction Started':'purple', 'Extraction Complete':'green',
+    'Router Completed':'cyan', 'Search Finished':'green', 'Provider A Completed':'cyan',
+    'Provider B Completed':'cyan'
+  };
+  $('timelineEl').innerHTML = events.map(e => `
+    <div class="tl-item">
+      <div class="tl-dot ${dotColors[e.event] || ''}"></div>
+      <div class="tl-event">${e.event}</div>
+      <div class="tl-desc">${e.description || ''}</div>
+      <div class="tl-time">${new Date(e.timestamp).toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>
+    </div>
+  `).join('') || '<div style="color:var(--text3)">No timeline events</div>';
+}
+
+function renderRouterTab(report) {
+  const rd = report.routerDecision || {};
+  $('routerContent').innerHTML = `
+    <div class="card card-lg" style="margin-bottom:1.2rem">
+      <div class="card-title">// Router Decision</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.8rem;margin-bottom:1.5rem">
+        <div class="norm-field"><div class="norm-field-label">Decision</div><div class="norm-field-value" style="color:var(--gold)">${rd.decision || '—'}</div></div>
+        <div class="norm-field"><div class="norm-field-label">Selected Provider</div><div class="norm-field-value">${(rd.selectedProvider || '—').slice(0,40)}</div></div>
+        <div class="norm-field"><div class="norm-field-label">Overall Confidence</div><div class="norm-field-value" style="color:var(--green)">${pct(report.confidence || 0)}</div></div>
+      </div>
+      <div class="card-title">Rationale</div>
+      <p style="font-size:0.88rem;color:var(--text2);line-height:1.7">${rd.rationale || '—'}</p>
+    </div>
+    <div class="table-wrap">
+      <table class="ai-table">
+        <thead><tr><th>Provider</th><th>Sources</th><th>Avg Confidence</th><th>Time</th><th>Score</th></tr></thead>
+        <tbody>${(rd.evaluations || []).map(e => `
+          <tr>
+            <td><strong>${e.providerName}</strong></td>
+            <td>${e.resultsCount}</td>
+            <td style="color:var(--gold)">${pct(e.avgConfidence)}</td>
+            <td style="color:var(--cyan)">${ms(e.executionTimeMs)}</td>
+            <td><span class="badge b-gold">${e.score}</span></td>
+          </tr>
+        `).join('') || '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text3)">No evaluations</td></tr>'}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderLogs(logs) {
+  $('logsContent').innerHTML = logs.map(l => {
+    const color = l.level === 'ERROR' ? 'var(--red)' : l.level === 'WARN' ? 'var(--gold)' : 'var(--text2)';
+    return `<div style="color:${color}">[${l.timestamp.split('T')[1]?.slice(0,8)}] [${l.level}] ${l.message}</div>`;
+  }).join('') || '<div style="color:var(--text3)">No logs available</div>';
+}
+
+// ── Demo Trigger ─────────────────────────────────────────────────
+window.runAIDemo = async () => {
+  const btn = $('runDemoBtn');
+  btn.disabled = true;
+  btn.textContent = '⚡ Running AI Engine...';
+
+  const demoDeal = {
+    id: 'demo_' + Date.now(),
+    title: 'SupremeX AI Dashboard',
+    proofUrl: 'https://github.com/supremex/ai-dashboard'
+  };
+
+  try {
+    await aiService.triggerAIVerification(demoDeal, (prog) => {
+      setProgress(prog.progress, prog.step);
+    });
+  } catch (err) {
+    logLine('❌ Error: ' + err.message, 'var(--red)');
+    btn.disabled = false;
+    btn.textContent = '🚀 Run Full AI Demo';
+  }
+};
+
+// ── Load existing report if deal ID in URL params ─────────────────
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const dealId = params.get('id') || params.get('deal');
+  if (dealId) {
+    $('demoSection').style.display = 'none';
+    $('reportSubtitle').textContent = `Deal ID: ${dealId}`;
+    const report = await aiService.getReportByDealId(dealId);
+    if (report) {
+      $('mainTabs').style.display = 'flex';
+      renderReport(report);
+    } else {
+      $('demoSection').style.display = 'block';
+    }
+  }
+})();
+</script>
+</body>
+</html>

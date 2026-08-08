@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow — Freelancer Escrow Portal & Algorand Vault</title>
+<link rel="stylesheet" href="../css/style.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --gold: #f59e0b;
+    --gold-light: #fbbf24;
+    --gold-dim: rgba(245,158,11,0.12);
+    --green: #10b981;
+    --green-dim: rgba(16,185,129,0.12);
+    --cyan: #38bdf8;
+    --cyan-dim: rgba(56,189,248,0.12);
+    --border: rgba(255,255,255,0.1);
+    --card: #111827;
+    --text: #f8fafc;
+    --text2: #94a3b8;
+    --text3: #64748b;
+  }
+
+  .dash-header { padding: 2.5rem 0 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .dash-greeting { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--cyan); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 600; }
+  .dash-title { font-size: clamp(1.8rem, 3.5vw, 2.5rem); margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif; font-weight: 800; }
+  .dash-role { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--cyan); background: var(--cyan-dim); padding: 0.35rem 0.85rem; border-radius: 20px; border: 1px solid rgba(56,189,248,0.3); display: inline-block; }
+  .deals-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+  .deals-header h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text2); }
+  .deals-list { display: flex; flex-direction: column; gap: 1rem; background: transparent; border: none; }
+  .deals-panel { display: none; }
+  .deals-panel.active { display: block; animation: fadeUp 0.35s ease-out both; }
+
+  /* ── ALGORAND ESCROW VAULT BANNER ── */
+  .vault-lock-card {
+    background: linear-gradient(135deg, rgba(17,24,39,0.98), rgba(15,23,42,0.95));
+    border: 1px solid rgba(56,189,248,0.25);
+    border-radius: 14px;
+    padding: 1.6rem 1.8rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+  .vault-lock-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--gold), var(--green));
+  }
+  .vault-badge-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.8rem; }
+  .vault-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .vt-locked { background: rgba(245,158,11,0.12); color: var(--gold-light); border: 1px solid rgba(245,158,11,0.3); }
+  .vt-released { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .vt-algo { background: rgba(56,189,248,0.12); color: var(--cyan); border: 1px solid rgba(56,189,248,0.3); }
+
+  .vault-amount-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.6rem;
+    font-weight: 900;
+    color: var(--cyan);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin: 0.4rem 0;
+  }
+  .vault-rule-box {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    margin: 1rem 0;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--text2);
+  }
+  .vault-rule-box strong { color: var(--text); }
+
+  .withdraw-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.85rem 1.8rem;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-decoration: none;
+  }
+  .wb-locked {
+    background: rgba(255,255,255,0.06);
+    color: var(--text3);
+    border: 1px solid var(--border);
+    cursor: not-allowed;
+  }
+  .wb-active {
+    background: var(--green);
+    color: #000;
+    box-shadow: 0 0 25px rgba(16,185,129,0.4);
+    animation: pulseGreen 2s infinite;
+  }
+  @keyframes pulseGreen { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); box-shadow: 0 0 35px rgba(16,185,129,0.7); } }
+
+  /* Withdrawal Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(12px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 25px 70px rgba(0,0,0,0.7);
+    animation: modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+
+  /* Toast Notifications */
+  .toast-stack {
+    position: fixed;
+    top: 76px;
+    right: 1.5rem;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 320px;
+  }
+  .toast {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: rgba(17,24,39,0.96);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem 1.1rem;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  @keyframes toastIn { from { transform: translateX(110%) scale(0.95); opacity: 0; } to { transform: translateX(0) scale(1); } }
+  .toast.t-green { border-left: 3px solid #10b981; }
+  .toast.t-cyan { border-left: 3px solid #38bdf8; }
+  .toast.t-amber { border-left: 3px solid #f59e0b; }
+</style>
+<script>
+  (function() {
+    const theme = localStorage.getItem('supremex-theme') || 'dark';
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme');
+    }
+  })();
+</script>
+</head>
+<body class="fade-in">
+
+<div class="toast-stack" id="toasts"></div>
+
+<nav class="topnav">
+  <a href="freelancer-dashboard.html" class="nav-logo">Nex<span>row</span> <span style="font-size:0.7rem;font-weight:600;color:var(--cyan);margin-left:0.4rem;padding:0.15rem 0.5rem;background:var(--cyan-dim);border-radius:12px;border:1px solid rgba(56,189,248,0.3)">FREELANCER</span></a>
+  <div class="nav-right">
+    <a href="ai-agent-demo.html" class="nav-link" style="color:var(--gold-bright);font-weight:700">🤖 AI Agent Demo</a>
+    <a href="how-it-works.html" class="nav-link" style="font-size:0.78rem">🚀 Escrow Walkthrough</a>
+    <button class="theme-toggle-btn" id="themeToggleBtn">🌙 Dark</button>
+    <span class="nav-user" id="navUser">freelancer@nexrow.io</span>
+    <button class="nav-logout" id="logoutBtn">Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="dash-header fade-up">
+    <div class="dash-greeting" id="dashGreeting">// Freelancer Workspace</div>
+    <h1 class="dash-title">🛠️ Freelancer Work & Payout Portal</h1>
+    <div class="dash-role">🛠️ Verified Freelancer · Algorand Smart Contract Protection</div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       ALGORAND ESCROW VAULT & LOCKED BALANCE CARD (Non-Withdrawable)
+  ────────────────────────────────────────────────────────────── -->
+  <div class="vault-lock-card fade-up">
+    <div class="vault-badge-row">
+      <span class="vault-tag vt-algo">⚡ Algorand Smart Contract Vault · 2-of-3 Multi-Sig</span>
+      <span class="vault-tag vt-locked" id="vaultStatusTag">🔒 Guaranteed in Vault (Hold / Non-Withdrawable)</span>
+    </div>
+
+    <div style="font-size:0.75rem;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.1em">Total Guaranteed Vault Amount</div>
+    <div class="vault-amount-display" id="vaultAmountDisp">₹32,000.00</div>
+    <div style="font-size:0.78rem;color:var(--text2);font-family:'DM Mono',monospace" id="vaultAlgoEquiv">≈ 32,000.00 USDC on Algorand Layer-1 (Zero Volatility)</div>
+
+    <div class="vault-rule-box">
+      <strong>🔒 Strict Escrow Rule Enforced:</strong> The client has deposited and locked this payment into the multi-sig vault. You can view the guaranteed balance, but funds are <strong>non-withdrawable</strong> until you deliver the work, AI completes verification, and the client releases the payment with their 4-digit OTP.
+    </div>
+
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <button class="withdraw-btn wb-locked" id="withdrawBtn" onclick="handleWithdrawalClick()">
+        🔒 Withdrawal Locked (Awaiting Client OTP Approval)
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="triggerAIDeliverySimulation()">
+        🤖 Submit Delivery & Trigger Client AI Alert →
+      </button>
+    </div>
+  </div>
+
+  <div class="stat-row fade-up">
+    <div class="stat-box"><div class="stat-box-num" id="statEarned">₹0</div><div class="stat-box-label">Total Withdrawable Earnings</div></div>
+    <div class="stat-box"><div class="stat-box-num" id="statActive">0</div><div class="stat-box-label">Active Work In Escrow</div></div>
+    <div class="stat-box"><div class="stat-box-num" id="statCompleted">0</div><div class="stat-box-label">Completed Deliveries</div></div>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <!-- Vertical Portal Layout (Left Sidebar + Right Panels) -->
+  <div class="portal-layout fade-up">
+    
+    <!-- LEFT SIDEBAR NAVIGATION -->
+    <aside class="portal-sidebar">
+      <div class="sidebar-title">// Freelancer Navigation</div>
+      <button class="portal-tab-btn active" id="tabAll">
+        <span>🛠️</span> Active Work & Tasks
+      </button>
+      <button class="portal-tab-btn" id="tabProof">
+        <span>📤</span> Submit Delivery Proof
+      </button>
+      <button class="portal-tab-btn" id="tabCompleted">
+        <span>💰</span> Earnings & Withdrawals
+      </button>
+      <button class="portal-tab-btn" id="tabProfile">
+        <span>⭐</span> Algorand Wallet & Profile
+      </button>
+    </aside>
+
+    <!-- RIGHT CONTENT PANELS -->
+    <main class="portal-content">
+      <div class="deals-header">
+        <h3>// Assigned Escrow Deals</h3>
+        <a href="client-join.html" class="btn btn-gold btn-sm">+ Join Deal with Code</a>
+      </div>
+
+      <div id="loading" class="flex-center" style="padding:3rem"><div class="spinner"></div></div>
+
+      <!-- TAB 1: ACTIVE WORK -->
+      <div class="deals-panel active" id="panel-all"><div class="deals-list" id="list-all"></div></div>
+
+      <!-- TAB 2: SUBMIT PROOF -->
+      <div class="deals-panel" id="panel-proof"><div class="deals-list" id="list-proof"></div></div>
+
+      <!-- TAB 3: EARNINGS & PAYOUTS -->
+      <div class="deals-panel" id="panel-completed"><div class="deals-list" id="list-completed"></div></div>
+
+      <!-- TAB 4: PROFILE & ALGORAND WALLET -->
+      <div class="deals-panel" id="panel-profile">
+        <div class="card card-lg">
+          <div class="card-title">Algorand Wallet & Verified Reputation</div>
+          <div style="display:flex;gap:1.5rem;align-items:center;margin-bottom:1.5rem">
+            <div style="font-size:3rem">⭐ 5.0</div>
+            <div>
+              <h3 style="margin-bottom:0.2rem">Verified Pro Freelancer</h3>
+              <p style="color:var(--text2)">100% On-Time Delivery Guarantee · Instant 3.3s Algorand Settlement</p>
+            </div>
+          </div>
+          <div class="field">
+            <label>Freelancer Algorand Wallet Address (Pera Wallet / Defly)</label>
+            <input type="text" value="ALGO7X9K2M4P9Q8L3V1W7Z0N5C8B6Y2T4R1J3F5H7E" readOnly style="background:var(--surface);font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--cyan)"/>
+          </div>
+          <div class="field mt-2">
+            <label>Public Portfolio / Deliverables Repository</label>
+            <input type="url" value="https://github.com/freelancer/brand-assets" readOnly style="background:var(--surface)"/>
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <div style="text-align:center;margin-top:3rem">
+    <a href="role-select.html" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text3);text-decoration:none">← Switch Role</a>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────
+     WITHDRAWAL MODAL (Bank Transfer / Algorand Settlement)
+────────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="withdrawModal">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h3 style="font-size:1.25rem;font-weight:800;color:#fff;margin:0">💸 Withdraw Escrow Earnings</h3>
+      <button class="btn btn-outline btn-sm" onclick="closeWithdrawModal()">✕</button>
+    </div>
+    <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:1rem;margin-bottom:1.2rem;text-align:center">
+      <div style="font-size:0.7rem;font-family:'DM Mono',monospace;text-transform:uppercase;color:var(--text2)">Available for Instant Withdrawal</div>
+      <div style="font-size:2rem;font-weight:900;color:#34d399;font-family:'JetBrains Mono',monospace" id="modalWithdrawAmount">₹32,000.00</div>
+      <div style="font-size:0.72rem;color:var(--text3)">✓ Verified by Client OTP & SupremeX AI</div>
+    </div>
+
+    <div class="field mb-2">
+      <label>Select Payout Destination</label>
+      <select class="field-input" id="payoutMethod" style="width:100%;padding:0.7rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;outline:none">
+        <option value="upi">Direct UPI (PhonePe / Google Pay / Paytm) — 0% Fee</option>
+        <option value="bank">Bank Account IMPS / NEFT (Instant Settlement)</option>
+        <option value="algo">Algorand USDC Wallet (Instant ~3.3s · 0.001 ALGO Fee)</option>
+      </select>
+    </div>
+
+    <div class="field mb-2">
+      <label>UPI ID / Account Number / Algorand Address</label>
+      <input type="text" id="payoutAddress" class="field-input" value="rohan.mehta@oksbi" style="width:100%;padding:0.7rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff"/>
+    </div>
+
+    <button class="btn btn-primary btn-full mt-2" id="confirmWithdrawBtn" onclick="executeInstantWithdrawal()">
+      Confirm & Withdraw Funds Instantly →
+    </button>
+    
+    <div id="algoTxnReceipt" style="display:none;margin-top:1rem;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:0.75rem;font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--cyan)">
+      <div>Txn Hash: <span id="txHashDisplay">ALGO-TXN-7F89B...</span></div>
+      <div>Settlement: Confirmed in 3.2s · Fee: 0.001 ALGO</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = 'https://qhcxwwobfqsecwqsvwid.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoY3h3d29iZnFzZWN3cXN2d2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODc0NzQsImV4cCI6MjA5NDc2MzQ3NH0.ZIcAU6PjSwEHeGZtD8B8NKJEd3YifgZa7S7hR9zbkMM';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+function formatINR(amount) { return '₹' + Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+function toast(cls, title, sub, icon) {
+  const stack = document.getElementById('toasts');
+  if (!stack) return;
+  const el = document.createElement('div');
+  el.className = 'toast ' + cls;
+  el.innerHTML = `<span style="font-size:1.2rem;flex-shrink:0;margin-top:0.05rem">${icon||'🔔'}</span><div><div style="font-size:0.8125rem;font-weight:700;color:#fff">${title}</div><div style="font-size:0.75rem;color:var(--text2)">${sub}</div></div>`;
+  stack.appendChild(el);
+  setTimeout(() => el.style.transition = 'opacity 0.4s, transform 0.4s', 3500);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(110%)'; }, 3800);
+  setTimeout(() => el.remove(), 4300);
+}
+
+const STATUS = {
+  WAITING_FOR_CLIENT: { label: 'Waiting for Client', badge: 'badge-muted' },
+  CLIENT_JOINED:      { label: 'Client Joined',      badge: 'badge-cyan' },
+  PENDING:            { label: 'Pending Payment',     badge: 'badge-muted' },
+  LOCKED:             { label: 'Payment Locked 🔒',   badge: 'badge-gold' },
+  DELIVERED:          { label: 'Delivered 📦',        badge: 'badge-cyan' },
+  VERIFYING:          { label: 'Verifying ⏳',        badge: 'badge-amber' },
+  RELEASED:           { label: 'Payment Released ✅', badge: 'badge-green' },
+  DISPUTED:           { label: 'Disputed ⚠',          badge: 'badge-red' },
+};
+
+window.currentVaultDeal = null;
+
+async function initFreelancerDashboard() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const localUser = JSON.parse(localStorage.getItem('sx_active_user') || 'null');
+  const user = session?.user || localUser;
+  if (!user) {
+    window.location.href = '../index.html';
+    return;
+  }
+  if (user && user.email) {
+    const rawName = user.user_metadata?.name || user.name || user.email.split('@')[0];
+    const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+    document.getElementById('navUser').textContent = user.email;
+    const greetingEl = document.getElementById('dashGreeting');
+    if (greetingEl) greetingEl.textContent = `// Welcome back, ${formattedName}`;
+  }
+
+  const { data: deals } = await supabase.from('deals').select('*').order('created_at', { ascending: false });
+  document.getElementById('loading').style.display = 'none';
+
+  const localDeals = JSON.parse(localStorage.getItem('sx_local_deals') || '[]');
+  const combinedDeals = [...(deals || [])];
+  localDeals.forEach(ld => {
+    if (!combinedDeals.some(d => d.id === ld.id || d.unique_code === ld.unique_code)) {
+      combinedDeals.unshift(ld);
+    }
+  });
+
+  const dealList = combinedDeals;
+  const activeWork = dealList.filter(d => ['LOCKED','DELIVERED','VERIFYING','CLIENT_JOINED','PENDING','WAITING_FOR_CLIENT'].includes(d.status));
+  const proofDeals = dealList.filter(d => d.status === 'LOCKED' || d.status === 'CLIENT_JOINED');
+  const completedWork = dealList.filter(d => d.status === 'RELEASED');
+
+  // Find primary active deal
+  const primaryDeal = dealList[0] || {
+    title: 'Logo & Brand Identity Design',
+    budget: 32000,
+    amount: 32000,
+    status: 'LOCKED',
+    freelancer_name: 'Rohan Mehta'
+  };
+  window.currentVaultDeal = primaryDeal;
+
+  const dealAmount = Number(primaryDeal.budget || primaryDeal.amount || 32000);
+  document.getElementById('vaultAmountDisp').textContent = formatINR(dealAmount);
+  document.getElementById('modalWithdrawAmount').textContent = formatINR(dealAmount);
+
+  // Update Locked / Released state
+  const isReleased = primaryDeal.status === 'RELEASED';
+  const vaultTag = document.getElementById('vaultStatusTag');
+  const withdrawBtn = document.getElementById('withdrawBtn');
+
+  if (isReleased) {
+    vaultTag.className = 'vault-tag vt-released';
+    vaultTag.textContent = '✅ Released by Client OTP (Withdrawable)';
+    withdrawBtn.className = 'withdraw-btn wb-active';
+    withdrawBtn.textContent = `💸 Withdraw ${formatINR(dealAmount)} Now (Bank / Algorand) →`;
+    document.getElementById('statEarned').textContent = formatINR(dealAmount);
+  } else {
+    vaultTag.className = 'vault-tag vt-locked';
+    vaultTag.textContent = '🔒 Guaranteed in Vault (Hold / Non-Withdrawable)';
+    withdrawBtn.className = 'withdraw-btn wb-locked';
+    withdrawBtn.textContent = '🔒 Withdrawal Locked (Awaiting Client OTP Approval)';
+    document.getElementById('statEarned').textContent = '₹0.00 (Locked)';
+  }
+
+  document.getElementById('statActive').textContent = activeWork.length || 1;
+  document.getElementById('statCompleted').textContent = completedWork.length;
+
+  const renderList = (elementId, list) => {
+    const el = document.getElementById(elementId);
+    if (!list.length) {
+      el.innerHTML = '<div class="card text-center" style="padding:3rem"><p style="color:var(--text3);font-family:\'JetBrains Mono\',monospace;font-size:0.85rem">No assigned deals found in this category.</p></div>';
+      return;
+    }
+    el.innerHTML = list.map(d => {
+      const s = STATUS[d.status] || { label: d.status, badge: 'badge-muted' };
+      const code = d.unique_code || d.id?.slice(0,8);
+      const isLocked = d.status === 'LOCKED';
+      const wtUrl = `how-it-works.html?fname=${encodeURIComponent(d.freelancer_name || '')}&femail=${encodeURIComponent(d.freelancer_email || '')}&dealId=${d.id || ''}&budget=${d.budget || d.amount || ''}&title=${encodeURIComponent(d.title || '')}`;
+      return `
+        <div class="deal-card" style="position:relative">
+          <a href="status.html?id=${d.id}" style="text-decoration:none;color:inherit;display:block">
+            <div class="deal-card-top">
+              <div>
+                <div class="deal-card-id">${code}</div>
+                <div class="deal-card-title">${d.title}</div>
+              </div>
+              <span class="badge ${s.badge}">${s.label}</span>
+            </div>
+            <div class="deal-card-desc">${d.description || 'Escrow protected deliverables and milestone releases.'}</div>
+            <div style="font-size:0.75rem;color:var(--text3);margin:0.4rem 0;font-family:'DM Mono',monospace">
+              🔒 Escrow State: <strong style="color:${isLocked ? 'var(--gold)' : 'var(--green)'}">${isLocked ? 'Held in Vault (Non-Withdrawable)' : 'Released by Client'}</strong>
+            </div>
+            <div class="deal-card-bottom">
+              <div class="deal-card-amount">${formatINR(d.budget || d.amount || 0)}</div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--cyan)">${isLocked ? '📦 Submit Proof for AI Scan →' : '✅ Payout Completed →'}</span>
+            </div>
+          </a>
+          <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+            <span style="font-size:0.7rem;color:var(--text3)">⚡ Algorand Smart Vault: 2-of-3 Multi-Sig</span>
+            <a href="${wtUrl}" class="btn btn-outline btn-sm" style="font-size:0.7rem;padding:0.25rem 0.65rem">🚀 Open Walkthrough →</a>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  renderList('list-all', dealList.length ? dealList : [primaryDeal]);
+  renderList('list-proof', proofDeals.length ? proofDeals : [primaryDeal]);
+  renderList('list-completed', completedWork);
+}
+
+// Withdrawal Button Click Handler
+window.handleWithdrawalClick = function() {
+  const deal = window.currentVaultDeal;
+  if (!deal || deal.status !== 'RELEASED') {
+    toast('t-amber', '🔒 Withdrawal Locked by Escrow', 'The client has not released the payment yet. Submit your proof and let AI verify to prompt client OTP release!', '🔒');
+    return;
+  }
+  document.getElementById('withdrawModal').classList.add('open');
+};
+
+window.closeWithdrawModal = function() {
+  document.getElementById('withdrawModal').classList.remove('open');
+};
+
+// Simulate Freelancer Delivering Work and AI Notifying Client
+window.triggerAIDeliverySimulation = function() {
+  toast('t-cyan', '📦 Proof Submitted & AI Scanning', 'GitHub assets sent to SupremeX AI multi-source inspection engine...', '🤖');
+
+  setTimeout(() => {
+    // Push notification to client dashboard
+    const notifs = JSON.parse(localStorage.getItem('sx_notifications') || '[]');
+    notifs.unshift({
+      id: 'notif_' + Date.now(),
+      title: '🤖 AI Inspection Passed (99%)',
+      message: `Rohan Mehta submitted vector assets. AI verified 99% accuracy. Please enter 4-digit OTP to release payout.`,
+      icon: '🤖',
+      badge: 'Action Required',
+      time: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem('sx_notifications', JSON.stringify(notifs.slice(0, 30)));
+
+    toast('t-green', '🔔 Client Notified in Real-Time', 'Notification sent to Client Dashboard to confirm OTP and release payment!', '📨');
+  }, 1800);
+};
+
+// Execute Instant Withdrawal
+window.executeInstantWithdrawal = function() {
+  const btn = document.getElementById('confirmWithdrawBtn');
+  btn.disabled = true;
+  btn.textContent = 'Processing Instant Settlement…';
+
+  const txHash = 'ALGO-TXN-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+
+  setTimeout(() => {
+    document.getElementById('txHashDisplay').textContent = txHash;
+    document.getElementById('algoTxnReceipt').style.display = 'block';
+    btn.textContent = '✓ Transferred Successfully!';
+    btn.className = 'btn btn-success btn-full mt-2';
+
+    toast('t-green', '💸 Withdrawal Complete!', `${formatINR(window.currentVaultDeal?.budget || 32000)} transferred instantly in 3.2s via Algorand Settlement!`, '🎉');
+
+    setTimeout(() => {
+      closeWithdrawModal();
+    }, 2800);
+  }, 1500);
+};
+
+const tabIds = ['all', 'proof', 'completed', 'profile'];
+tabIds.forEach(tId => {
+  const btn = document.getElementById('tab' + tId.charAt(0).toUpperCase() + tId.slice(1));
+  if (btn) {
+    btn.addEventListener('click', () => {
+      tabIds.forEach(t => {
+        const b = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        const p = document.getElementById(`panel-${t}`);
+        if (b) b.classList.remove('active');
+        if (p) p.classList.remove('active');
+      });
+      btn.classList.add('active');
+      document.getElementById(`panel-${tId}`)?.classList.add('active');
+    });
+  }
+});
+
+document.addEventListener('DOMContentLoaded', initFreelancerDashboard);
+</script>
+
+<!-- SupremeX Chat Widget -->
+<script type="module" src="../js/chat-widget.js"></script>
+<script type="module">
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  try {
+    if (window.supabase && window.supabase.auth) {
+      await window.supabase.auth.signOut();
+    }
+  } catch(e) {}
+  const isInPages = window.location.pathname.includes('/pages/');
+  window.location.replace(isInPages ? '../index.html' : 'index.html');
+});
+</script>
+</body>
+</html>

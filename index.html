@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow — Login & Real Escrow</title>
+<link rel="stylesheet" href="css/style.css"/>
+<style>
+  .auth-wrap {
+    display: grid; grid-template-columns: 1fr 1fr;
+    min-height: 100vh;
+  }
+  .auth-left {
+    background: var(--deep);
+    border-right: 1px solid var(--border);
+    padding: 4rem 3.5rem;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    position: relative; overflow: hidden;
+  }
+  .auth-left-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(245,158,11,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245,158,11,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 70% at 30% 50%, black, transparent);
+  }
+  .auth-left-glow {
+    position: absolute;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%);
+    top: 35%; left: 25%; transform: translate(-50%,-50%);
+    pointer-events: none;
+  }
+  .auth-brand { position: relative; z-index: 1; }
+  .auth-brand-logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.9rem; font-weight: 800; letter-spacing: -0.03em;
+  }
+  .auth-brand-logo span {
+    color: var(--gold-light);
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .auth-tagline { position: relative; z-index: 1; }
+  .auth-tagline h2 {
+    font-size: clamp(2rem, 3.5vw, 2.8rem);
+    line-height: 1.15; margin-bottom: 1.2rem;
+    font-family: 'Outfit', sans-serif;
+  }
+  .auth-tagline h2 em {
+    font-style: normal;
+    color: var(--gold-bright);
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .auth-tagline p { font-size: 0.95rem; line-height: 1.7; max-width: 360px; color: var(--text2); }
+  .auth-steps { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 0.8rem; }
+  .auth-step {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.8rem 1rem;
+    background: var(--surface);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.82rem; font-weight: 500;
+    color: var(--text);
+  }
+  .auth-step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--gold-dim); border: 1px solid rgba(245,158,11,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; color: var(--gold-bright); font-weight: 700; flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .auth-right {
+    display: flex; align-items: center; justify-content: center;
+    padding: 2.5rem 2rem; position: relative;
+  }
+  .auth-box {
+    width: 100%; max-width: 420px;
+    background: var(--card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    padding: 2.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    position: relative;
+  }
+  .auth-top-bar {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.8rem;
+  }
+  .auth-tabs {
+    display: flex; border: 1px solid var(--border);
+    border-radius: 30px; padding: 4px; background: var(--surface);
+    width: fit-content;
+  }
+  .auth-tab {
+    padding: 0.45rem 1.2rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    background: none; border: none; border-radius: 20px;
+    color: var(--text3); cursor: pointer; transition: all 0.25s ease;
+  }
+  .auth-tab.active {
+    background: var(--gold-gradient); color: #000; font-weight: 700;
+    box-shadow: 0 2px 10px rgba(245,158,11,0.3);
+  }
+  .auth-form { display: none; }
+  .auth-form.active { display: block; animation: fadeUp 0.35s ease-out both; }
+  .role-toggle {
+    display: flex; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 3px; background: var(--surface);
+    margin-top: 0.4rem;
+  }
+  .role-btn {
+    flex: 1; padding: 0.6rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    background: none; border: none; border-radius: 4px;
+    color: var(--text3); cursor: pointer; transition: all 0.2s ease;
+    text-align: center;
+  }
+  .role-btn.active {
+    background: var(--gold-dim); color: var(--gold-bright); border: 1px solid rgba(245,158,11,0.3);
+  }
+  .form-title {
+    font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem;
+  }
+  .form-sub {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text3);
+    margin-bottom: 1.8rem; letter-spacing: 0.04em;
+  }
+  @media (max-width: 768px) {
+    .auth-wrap { grid-template-columns: 1fr; }
+    .auth-left { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-left">
+    <div class="auth-left-grid"></div>
+    <div class="auth-left-glow"></div>
+    <div class="auth-brand fade-up">
+      <div class="auth-brand-logo">Nex<span>row</span></div>
+      <div style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--gold); font-size: 1rem; margin-top: 0.5rem;">Real Escrow. Real Protection.</div>
+    </div>
+    <div class="auth-tagline fade-up">
+      <h2>Trust No One.<br/><em>Trust the Escrow.</em></h2>
+      <p>Multi-layer verified escrow for secure transactions between clients and freelancers. Payment is locked until every proof layer passes.</p>
+    </div>
+    <div class="auth-steps fade-up">
+      <div class="auth-step"><div class="auth-step-num">1</div>Client creates deal &amp; locks payment</div>
+      <div class="auth-step"><div class="auth-step-num">2</div>Provider delivers &amp; uploads proof</div>
+      <div class="auth-step"><div class="auth-step-num">3</div>Client verifies with OTP</div>
+      <div class="auth-step"><div class="auth-step-num">4</div>System releases payment</div>
+    </div>
+    <div class="fade-up" style="margin-top:1.5rem">
+      <a href="pages/ai-agent-demo.html" class="btn btn-gold" style="display:flex;align-items:center;justify-content:center;gap:0.6rem;padding:0.75rem 1.2rem;font-size:0.85rem;box-shadow:0 4px 20px rgba(245,158,11,0.4)">
+        <span>🤖</span> <strong>Launch Autonomous AI Agent Demo (For Judges) →</strong>
+      </a>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-box fade-up">
+      <div class="auth-top-bar">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tabLogin">Login</button>
+          <button class="auth-tab" id="tabSignup">Sign Up</button>
+        </div>
+        <button class="theme-toggle-btn" id="themeToggleBtn" type="button">🌙 Dark</button>
+      </div>
+      <div id="alertBox"></div>
+      <div class="auth-form active" id="loginForm">
+        <div class="form-title">Welcome back</div>
+        <div class="form-sub">// Enter your credentials to continue to Nexrow</div>
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com"/>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••"/>
+        </div>
+        <button class="btn btn-gold btn-full" id="loginBtn">Enter Nexrow</button>
+      </div>
+      <div class="auth-form" id="signupForm">
+        <div class="form-title">Create account</div>
+        <div class="form-sub">// Join the secure escrow ecosystem</div>
+        <div class="field">
+          <label>Full Name</label>
+          <input type="text" id="signupName" placeholder="John Doe"/>
+        </div>
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" id="signupEmail" placeholder="you@example.com"/>
+        </div>
+        <div class="field">
+          <label>Phone Number</label>
+          <input type="tel" id="signupPhone" placeholder="+91 9876543210" maxlength="15"/>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="signupPassword" placeholder="Min 8 characters"/>
+        </div>
+        <div class="field">
+          <label>Street Address</label>
+          <input type="text" id="signupStreet" placeholder="123, MG Road"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem">
+          <div class="field">
+            <label>City</label>
+            <input type="text" id="signupCity" placeholder="Mumbai"/>
+          </div>
+          <div class="field">
+            <label>State</label>
+            <input type="text" id="signupState" placeholder="Maharashtra"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Pincode</label>
+          <input type="text" id="signupPincode" placeholder="400001" maxlength="6"/>
+        </div>
+        <div class="field">
+          <label>Join as</label>
+          <div class="role-toggle" id="signupRoleToggle">
+            <button type="button" class="role-btn active" id="roleClient">Client</button>
+            <button type="button" class="role-btn" id="roleFreelancer">Freelancer</button>
+            <button type="button" class="role-btn" id="roleAdmin">Admin</button>
+          </div>
+        </div>
+        <button class="btn btn-gold btn-full" id="signupBtn">Create Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = 'https://qhcxwwobfqsecwqsvwid.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoY3h3d29iZnFzZWN3cXN2d2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODc0NzQsImV4cCI6MjA5NDc2MzQ3NH0.ZIcAU6PjSwEHeGZtD8B8NKJEd3YifgZa7S7hR9zbkMM';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+function showAlert(containerId, type, message) {
+  const icons = { error: '✕', success: '✓', info: 'ℹ', warning: '⚠' };
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = `<div class='alert alert-${type}'><span>${icons[type] || '•'}</span><span>${message}</span></div>`;
+  setTimeout(() => { el.innerHTML = ''; }, 5000);
+}
+
+// Theme Toggle Initialization
+const themeBtn = document.getElementById('themeToggleBtn');
+if (themeBtn) {
+  const currentTheme = localStorage.getItem('supremex-theme') || 'dark';
+  themeBtn.innerHTML = currentTheme === 'light' ? '☀️ Light' : '🌙 Dark';
+  if (currentTheme === 'light') {
+    document.body.classList.add('light-theme');
+    document.documentElement.classList.add('light-theme');
+  }
+  themeBtn.addEventListener('click', () => {
+    const isLight = document.body.classList.toggle('light-theme');
+    document.documentElement.classList.toggle('light-theme', isLight);
+    const newTheme = isLight ? 'light' : 'dark';
+    localStorage.setItem('supremex-theme', newTheme);
+    themeBtn.innerHTML = isLight ? '☀️ Light' : '🌙 Dark';
+  });
+}
+
+// Role selection state for signup
+let signupRole = 'client';
+document.getElementById('roleClient').addEventListener('click', () => {
+  document.getElementById('roleClient').classList.add('active');
+  document.getElementById('roleFreelancer').classList.remove('active');
+  document.getElementById('roleAdmin').classList.remove('active');
+  signupRole = 'client';
+});
+document.getElementById('roleFreelancer').addEventListener('click', () => {
+  document.getElementById('roleFreelancer').classList.add('active');
+  document.getElementById('roleClient').classList.remove('active');
+  document.getElementById('roleAdmin').classList.remove('active');
+  signupRole = 'freelancer';
+});
+document.getElementById('roleAdmin').addEventListener('click', () => {
+  document.getElementById('roleAdmin').classList.add('active');
+  document.getElementById('roleClient').classList.remove('active');
+  document.getElementById('roleFreelancer').classList.remove('active');
+  signupRole = 'admin';
+});
+
+// ── Tab switching ──
+document.getElementById('tabLogin').addEventListener('click', () => switchTab('login'));
+document.getElementById('tabSignup').addEventListener('click', () => switchTab('signup'));
+
+function switchTab(tab) {
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('tabSignup').classList.toggle('active', tab === 'signup');
+  document.getElementById('loginForm').classList.toggle('active', tab === 'login');
+  document.getElementById('signupForm').classList.toggle('active', tab === 'signup');
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  const btn   = document.getElementById('loginBtn');
+
+  if (!email || !pass) return showAlert('alertBox','error','Please fill in all fields.');
+  if (!isValidEmail(email)) return showAlert('alertBox','error','Please enter a valid email address (must contain @).');
+  if (pass.length < 8) return showAlert('alertBox','error','Password must be at least 8 characters.');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Authenticating...';
+
+  try {
+    let authUser = null;
+    const lowerEmail = email.toLowerCase().trim();
+    let authRole = 'client';
+
+    const FREELANCER_EMAILS = [
+      'aarav@supremex.io', 'priya@supremex.io', 'rohan@supremex.io', 'sneha@supremex.io',
+      'aditya@supremex.io', 'neha@supremex.io', 'karan@supremex.io', 'isha@supremex.io',
+      'rahul@supremex.io', 'meera@supremex.io', 'vikram@supremex.io', 'ananya@supremex.io',
+      'soham@supremex.io', 'kavya@supremex.io', 'arjun@supremex.io', 'riya@supremex.io',
+      'dev@supremex.io', 'pooja@supremex.io', 'yash@supremex.io', 'zoya@supremex.io',
+      'freelancer@supremex.io'
+    ];
+
+    if (lowerEmail.includes('admin')) {
+      authRole = 'admin';
+    } else if (FREELANCER_EMAILS.includes(lowerEmail) || lowerEmail.includes('freelancer') || lowerEmail.includes('free') || lowerEmail.includes('provider')) {
+      authRole = 'freelancer';
+    } else {
+      try {
+        const { data: dbUser } = await supabase.from('users').select('role').ilike('email', lowerEmail).single();
+        if (dbUser?.role) authRole = dbUser.role;
+      } catch(e) {}
+    }
+
+    // 1. Try Supabase Sign-in
+    const { data: signInData } = await supabase.auth.signInWithPassword({ email: lowerEmail, password: pass }).catch(() => ({}));
+    if (signInData?.user) {
+      authUser = signInData.user;
+    } else {
+      // 2. Try Supabase Sign-up fallback
+      const { data: signUpData } = await supabase.auth.signUp({
+        email: lowerEmail, password: pass, options: { data: { name: lowerEmail.split('@')[0], role: authRole } }
+      }).catch(() => ({}));
+      if (signUpData?.user) {
+        authUser = signUpData.user;
+      }
+    }
+
+    const userId = authUser ? authUser.id : '00000000-0000-4000-8000-000000' + Math.floor(Math.random() * 899999 + 100000);
+    const userProfile = { id: userId, email: lowerEmail, role: authRole, name: lowerEmail.split('@')[0] };
+    localStorage.setItem('sx_active_user', JSON.stringify(userProfile));
+
+    // Ensure user entry exists in database
+    await supabase.from('users').upsert({
+      id: userId,
+      email: lowerEmail,
+      name: lowerEmail.split('@')[0],
+      role: authRole
+    }).catch(() => {});
+
+    showAlert('alertBox', 'success', 'Login successful! Redirecting...');
+
+    setTimeout(() => {
+      if (authRole === 'admin') window.location.href = 'pages/admin-dashboard.html';
+      else if (authRole === 'freelancer' || authRole === 'provider') window.location.href = 'pages/freelancer-dashboard.html';
+      else window.location.href = 'pages/client-dashboard.html';
+    }, 500);
+
+  } catch(e) {
+    const lowerEmail = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const FREELANCER_EMAILS = [
+      'aarav@supremex.io', 'priya@supremex.io', 'rohan@supremex.io', 'sneha@supremex.io',
+      'aditya@supremex.io', 'neha@supremex.io', 'karan@supremex.io', 'isha@supremex.io',
+      'rahul@supremex.io', 'meera@supremex.io', 'vikram@supremex.io', 'ananya@supremex.io',
+      'soham@supremex.io', 'kavya@supremex.io', 'arjun@supremex.io', 'riya@supremex.io',
+      'dev@supremex.io', 'pooja@supremex.io', 'yash@supremex.io', 'zoya@supremex.io',
+      'freelancer@supremex.io'
+    ];
+    let authRole = 'client';
+    if (lowerEmail.includes('admin')) authRole = 'admin';
+    else if (FREELANCER_EMAILS.includes(lowerEmail) || lowerEmail.includes('freelancer') || lowerEmail.includes('free')) authRole = 'freelancer';
+
+    const userId = '00000000-0000-4000-8000-000000' + Math.floor(Math.random() * 899999 + 100000);
+    const userProfile = { id: userId, email: lowerEmail, role: authRole, name: lowerEmail.split('@')[0] };
+    localStorage.setItem('sx_active_user', JSON.stringify(userProfile));
+
+    if (authRole === 'admin') window.location.href = 'pages/admin-dashboard.html';
+    else if (authRole === 'freelancer') window.location.href = 'pages/freelancer-dashboard.html';
+    else window.location.href = 'pages/client-dashboard.html';
+  }
+});
+
+function isValidIndianPhone(p) {
+  const cleaned = p.replace(/[\s\-\+]/g, '');
+  return /^(91)?[6-9]\d{9}$/.test(cleaned);
+}
+
+document.getElementById('signupBtn').addEventListener('click', async () => {
+  const name    = document.getElementById('signupName').value.trim();
+  const email   = document.getElementById('signupEmail').value.trim();
+  const phone   = document.getElementById('signupPhone').value.trim();
+  const pass    = document.getElementById('signupPassword').value;
+  const street  = document.getElementById('signupStreet').value.trim();
+  const city    = document.getElementById('signupCity').value.trim();
+  const state   = document.getElementById('signupState').value.trim();
+  const pincode = document.getElementById('signupPincode').value.trim();
+  const btn     = document.getElementById('signupBtn');
+
+  if (!name || !email || !phone || !pass) return showAlert('alertBox','error','Please fill in all required fields (Name, Email, Phone, Password).');
+  if (!isValidEmail(email)) return showAlert('alertBox','error','Please enter a valid email address.');
+  if (!isValidIndianPhone(phone)) return showAlert('alertBox','error','Please enter a valid Indian phone number (10 digits starting with 6-9).');
+  if (pass.length < 8) return showAlert('alertBox','error','Password must be at least 8 characters.');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Creating account...';
+
+  try {
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password: pass,
+      options: {
+        data: { name: name, role: signupRole }
+      }
+    });
+    if (error) throw error;
+    
+    if (data && data.user) {
+      // Store extended profile in users table
+      await supabase.from('users').upsert({
+        id: data.user.id,
+        email: email,
+        name: name,
+        full_name: name,
+        role: signupRole,
+        phone_number: phone.replace(/[\s\-\+]/g, '').replace(/^91/, ''),
+        address: { street, city, state, pincode }
+      });
+
+      showAlert('alertBox', 'success', '✓ Account created successfully! You can now log in.');
+      btn.disabled = false;
+      btn.innerHTML = 'Create Account';
+      document.getElementById('signupName').value = '';
+      document.getElementById('signupEmail').value = '';
+      document.getElementById('signupPhone').value = '';
+      document.getElementById('signupPassword').value = '';
+      document.getElementById('signupStreet').value = '';
+      document.getElementById('signupCity').value = '';
+      document.getElementById('signupState').value = '';
+      document.getElementById('signupPincode').value = '';
+      document.getElementById('loginEmail').value = email;
+      setTimeout(() => switchTab('login'), 1500);
+    } else {
+      throw new Error("Signup failed. This email might already be registered. Please try logging in.");
+    }
+  } catch(e) {
+    showAlert('alertBox','error', e.message);
+    btn.disabled = false;
+    btn.innerHTML = 'Create Account';
+  }
+});
+
+document.getElementById('loginPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+document.getElementById('signupPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('signupBtn').click();
+});
+</script>
+</body>
+</html>

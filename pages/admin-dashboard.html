@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow — Admin Control Center</title>
+<link rel="stylesheet" href="../css/style.css"/>
+<style>
+  .dash-header { padding: 2.5rem 0 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .dash-greeting { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--gold-light); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 600; }
+  .dash-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif; font-weight: 800; }
+  .dash-role { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--gold-bright); background: var(--gold-dim); padding: 0.35rem 0.85rem; border-radius: 20px; border: 1px solid rgba(245,158,11,0.3); display: inline-flex; align-items: center; gap: 0.4rem; }
+
+  .stat-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  @media (max-width: 900px) { .stat-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 500px) { .stat-grid-4 { grid-template-columns: 1fr; } }
+  .section-title { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text2); margin-bottom: 1.2rem; display: flex; align-items: center; justify-content: space-between; }
+  .admin-table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 2rem; box-shadow: var(--shadow-lg); }
+  .admin-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
+  .admin-table th { background: rgba(15, 23, 42, 0.9); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); }
+  .admin-table td { padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); color: var(--text); }
+  .admin-table tr:last-child td { border-bottom: none; }
+  .admin-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+  .action-btn-sm { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; padding: 0.35rem 0.7rem; border-radius: 4px; border: none; cursor: pointer; transition: all 0.2s; }
+  .action-btn-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .action-btn-green:hover { background: var(--green); color: #000; }
+  .action-btn-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .action-btn-red:hover { background: var(--red); color: #fff; }
+  .admin-panel { display: none; }
+  .admin-panel.active { display: block; animation: fadeUp 0.35s ease-out both; }
+</style>
+<script>
+  (function() {
+    const theme = localStorage.getItem('supremex-theme') || 'dark';
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme');
+    }
+  })();
+</script>
+</head>
+<body class="fade-in">
+
+<nav class="topnav">
+  <a href="admin-dashboard.html" class="nav-logo">Nex<span>row</span> <span style="font-size:0.7rem;font-weight:600;color:var(--gold-bright);margin-left:0.4rem;padding:0.15rem 0.5rem;background:var(--gold-dim);border-radius:12px;border:1px solid rgba(245,158,11,0.3)">ADMIN</span></a>
+  <div class="nav-right">
+    <a href="how-it-works.html" class="nav-link" style="font-size:0.78rem">🚀 Walkthrough</a>
+    <button class="theme-toggle-btn" id="themeToggleBtn">🌙 Dark</button>
+    <span class="nav-user" id="navUser">admin@nexrow.io</span>
+    <button class="nav-logout" id="logoutBtn">Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="dash-header fade-up">
+    <div class="dash-greeting">// Enterprise Governance</div>
+    <h1 class="dash-title">👑 Admin Control Center</h1>
+    <div class="dash-role">👑 System Administrator · Full Oversight & Resolution Rights</div>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <!-- Vertical Portal Layout (Left Sidebar + Right Panels) -->
+  <div class="portal-layout fade-up">
+    
+    <!-- LEFT SIDEBAR NAVIGATION -->
+    <aside class="portal-sidebar">
+      <div class="sidebar-title">// Admin Navigation</div>
+      <button class="portal-tab-btn active" id="tabOverview">
+        <span>📊</span> System Overview
+      </button>
+      <button class="portal-tab-btn" id="tabDisputes">
+        <span>🚨</span> Disputes Center
+      </button>
+      <button class="portal-tab-btn" id="tabUsers">
+        <span>👥</span> Users Directory
+      </button>
+      <button class="portal-tab-btn" id="tabFreelancers">
+        <span>🛠️</span> Verified Freelancers (20)
+      </button>
+      <button class="portal-tab-btn" id="tabLedger">
+        <span>📋</span> Master Deals Ledger
+      </button>
+      <button class="portal-tab-btn" id="tabSettings">
+        <span>⚙️</span> System Settings
+      </button>
+    </aside>
+
+    <!-- RIGHT CONTENT PANELS -->
+    <main class="portal-content">
+      
+      <!-- TAB 1: OVERVIEW -->
+      <div class="admin-panel active" id="panelOverview">
+        <div class="stat-grid-4">
+          <div class="stat-box">
+            <div class="stat-box-num" id="statTotalUsers">0</div>
+            <div class="stat-box-label">Total Platform Users</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-num" id="statFreelancers">0</div>
+            <div class="stat-box-label">Total Freelancers</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-num" id="statClients">0</div>
+            <div class="stat-box-label">Total Clients</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-num" id="statVolume">₹0</div>
+            <div class="stat-box-label">Total Volume Vaulted</div>
+          </div>
+        </div>
+
+        <div class="card card-sm mb-3">
+          <div class="card-title">System Activity Status</div>
+          <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+            <div><span class="muted">Engine State:</span> <strong style="color:var(--green)">● Operational (256-Bit Escrow Vault)</strong></div>
+            <div><span class="muted">Database Region:</span> <strong>asia-south1 (Firestore / Supabase)</strong></div>
+            <div><span class="muted">Dispute Queue:</span> <strong id="disputeQueueStatus">0 Pending</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: DISPUTES CENTER -->
+      <div class="admin-panel" id="panelDisputes">
+        <div class="section-title">
+          <span>🚨 Disputes & Pending Review Queue</span>
+          <span class="badge badge-amber" id="disputeCountBadge">0 Open</span>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Deal Code</th>
+                <th>Title</th>
+                <th>Client</th>
+                <th>Freelancer</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Admin Action</th>
+              </tr>
+            </thead>
+            <tbody id="disputesTableBody">
+              <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">Checking for active disputes...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 3: USERS DIRECTORY -->
+      <div class="admin-panel" id="panelUsers">
+        <div class="section-title">
+          <span>👥 Registered Users & Accounts</span>
+          <span class="badge badge-cyan" id="userCountBadge">0 Users</span>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User Email</th>
+                <th>Role</th>
+                <th>Location</th>
+                <th>Joined Date</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text3)">Loading user directory...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: FREELANCERS DIRECTORY -->
+      <div class="admin-panel" id="panelFreelancers">
+        <div class="section-title">
+          <span>🛠️ Verified Freelancers Directory (20)</span>
+          <span class="badge badge-gold">Top Verified Talent</span>
+        </div>
+        <div class="admin-table-wrap" style="overflow-x:auto">
+          <table class="admin-table" style="min-width:1100px">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Login Email</th>
+                <th>Password</th>
+                <th>Domain / Specialization</th>
+                <th>Exp</th>
+                <th>Rating</th>
+                <th>Projects</th>
+                <th>Hourly Rate</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Short Bio</th>
+              </tr>
+            </thead>
+            <tbody id="freelancersTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 4: MASTER LEDGER -->
+      <div class="admin-panel" id="panelLedger">
+        <div class="section-title">
+          <span>📋 System Escrow Deals Ledger</span>
+          <a href="create-deal.html" class="btn btn-gold btn-sm">+ Create System Deal</a>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Deal Code</th>
+                <th>Title</th>
+                <th>Budget</th>
+                <th>Status</th>
+                <th>Created Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="dealsTableBody">
+              <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">Loading deals ledger...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 5: SYSTEM SETTINGS -->
+      <div class="admin-panel" id="panelSettings">
+        <div class="card card-lg">
+          <div class="card-title">Platform Configuration & Parameters</div>
+          <div class="field">
+            <label>Platform Commission Fee (%)</label>
+            <input type="number" value="2.5" readOnly style="background:var(--surface)"/>
+          </div>
+          <div class="field">
+            <label>Escrow Dispute Review Period</label>
+            <input type="text" value="7 Days Automatic Lock" readOnly style="background:var(--surface)"/>
+          </div>
+          <div class="field">
+            <label>Security Encryption</label>
+            <input type="text" value="AES-256 Bit Encryption + SHA-256 Hashing" readOnly style="background:var(--surface)"/>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="alert('Platform Settings Updated!')">Save Settings</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div style="text-align:center;margin:3rem 0">
+    <a href="role-select.html" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text3);text-decoration:none">← Switch Role</a>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = 'https://qhcxwwobfqsecwqsvwid.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoY3h3d29iZnFzZWN3cXN2d2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODc0NzQsImV4cCI6MjA5NDc2MzQ3NH0.ZIcAU6PjSwEHeGZtD8B8NKJEd3YifgZa7S7hR9zbkMM';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Theme Toggle
+const themeBtn = document.getElementById('themeToggleBtn');
+if (themeBtn) {
+  const currentTheme = localStorage.getItem('supremex-theme') || 'dark';
+  themeBtn.innerHTML = currentTheme === 'light' ? '☀️ Light' : '🌙 Dark';
+  themeBtn.addEventListener('click', () => {
+    const isLight = document.body.classList.toggle('light-theme');
+    document.documentElement.classList.toggle('light-theme', isLight);
+    const newTheme = isLight ? 'light' : 'dark';
+    localStorage.setItem('supremex-theme', newTheme);
+    themeBtn.innerHTML = isLight ? '☀️ Light' : '🌙 Dark';
+  });
+}
+
+function formatINR(amount) { return '₹' + Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+const FREELANCERS_DATA = [
+  { id: 1, name: 'Aarav Sharma', email: 'aarav@supremex.io', pass: 'aarav1234', domain: 'Full Stack Web Development', exp: '5 Years', rating: '⭐ 4.9', projects: 128, rate: '₹1,500/hr', location: 'Mumbai', status: 'Available', bio: 'Builds scalable React, Node.js & MongoDB applications.' },
+  { id: 2, name: 'Priya Patel', email: 'priya@supremex.io', pass: 'priya1234', domain: 'UI/UX Design', exp: '4 Years', rating: '⭐ 4.8', projects: 95, rate: '₹1,200/hr', location: 'Ahmedabad', status: 'Available', bio: 'Creates premium mobile and web interfaces using Figma.' },
+  { id: 3, name: 'Rohan Mehta', email: 'rohan@supremex.io', pass: 'rohan1234', domain: 'Logo & Brand Identity', exp: '6 Years', rating: '⭐ 5.0', projects: 210, rate: '₹1,000/hr', location: 'Pune', status: 'Busy', bio: 'Expert in minimalist and luxury brand identity.' },
+  { id: 4, name: 'Sneha Kulkarni', email: 'sneha@supremex.io', pass: 'sneha1234', domain: 'Sketch Artist', exp: '3 Years', rating: '⭐ 4.7', projects: 76, rate: '₹850/hr', location: 'Nagpur', status: 'Available', bio: 'Hyper-realistic pencil portraits and custom sketches.' },
+  { id: 5, name: 'Aditya Verma', email: 'aditya@supremex.io', pass: 'aditya1234', domain: 'WordPress Development', exp: '5 Years', rating: '⭐ 4.8', projects: 140, rate: '₹900/hr', location: 'Delhi', status: 'Available', bio: 'Develops SEO-friendly business websites.' },
+  { id: 6, name: 'Neha Singh', email: 'neha@supremex.io', pass: 'neha1234', domain: 'Digital Painting', exp: '4 Years', rating: '⭐ 4.9', projects: 88, rate: '₹1,100/hr', location: 'Jaipur', status: 'Busy', bio: 'Creates fantasy, concept and portrait digital artwork.' },
+  { id: 7, name: 'Karan Joshi', email: 'karan@supremex.io', pass: 'karan1234', domain: 'Mobile App Development', exp: '6 Years', rating: '⭐ 4.9', projects: 135, rate: '₹1,700/hr', location: 'Bengaluru', status: 'Available', bio: 'Flutter & React Native expert for Android/iOS apps.' },
+  { id: 8, name: 'Isha Kapoor', email: 'isha@supremex.io', pass: 'isha1234', domain: 'Graphic Design', exp: '4 Years', rating: '⭐ 4.8', projects: 160, rate: '₹950/hr', location: 'Chandigarh', status: 'Available', bio: 'Social media creatives, brochures and banners.' },
+  { id: 9, name: 'Rahul Nair', email: 'rahul@supremex.io', pass: 'rahul1234', domain: 'Backend Development', exp: '7 Years', rating: '⭐ 4.9', projects: 182, rate: '₹1,600/hr', location: 'Kochi', status: 'Busy', bio: 'Builds secure REST APIs using Node.js & Express.' },
+  { id: 10, name: 'Meera Deshmukh', email: 'meera@supremex.io', pass: 'meera1234', domain: 'Pot Design & Ceramic Art', exp: '5 Years', rating: '⭐ 4.8', projects: 92, rate: '₹700/hr', location: 'Kolhapur', status: 'Available', bio: 'Handmade decorative and customized ceramic pots.' },
+  { id: 11, name: 'Vikram Rao', email: 'vikram@supremex.io', pass: 'vikram1234', domain: 'Frontend Development', exp: '5 Years', rating: '⭐ 4.8', projects: 155, rate: '₹1,300/hr', location: 'Hyderabad', status: 'Available', bio: 'React, Next.js and Tailwind CSS specialist.' },
+  { id: 12, name: 'Ananya Roy', email: 'ananya@supremex.io', pass: 'ananya1234', domain: 'Watercolor Painting', exp: '6 Years', rating: '⭐ 5.0', projects: 115, rate: '₹900/hr', location: 'Kolkata', status: 'Busy', bio: 'Professional watercolor artist for portraits and landscapes.' },
+  { id: 13, name: 'Soham Patil', email: 'soham@supremex.io', pass: 'soham1234', domain: '3D Modeling & Rendering', exp: '4 Years', rating: '⭐ 4.7', projects: 74, rate: '₹1,400/hr', location: 'Nashik', status: 'Available', bio: 'Creates realistic 3D models for architecture and products.' },
+  { id: 14, name: 'Kavya Menon', email: 'kavya@supremex.io', pass: 'kavya1234', domain: 'Content Writing', exp: '5 Years', rating: '⭐ 4.8', projects: 225, rate: '₹750/hr', location: 'Chennai', status: 'Available', bio: 'SEO blogs, technical writing and website content.' },
+  { id: 15, name: 'Arjun Gupta', email: 'arjun@supremex.io', pass: 'arjun1234', domain: 'AI & Machine Learning', exp: '3 Years', rating: '⭐ 4.9', projects: 61, rate: '₹2,000/hr', location: 'Noida', status: 'Busy', bio: 'Develops AI chatbots and predictive ML models.' },
+  { id: 16, name: 'Riya Fernandes', email: 'riya@supremex.io', pass: 'riya1234', domain: 'Illustration', exp: '5 Years', rating: '⭐ 4.8', projects: 109, rate: '₹1,000/hr', location: 'Goa', status: 'Available', bio: "Children's books, editorial and commercial illustrations." },
+  { id: 17, name: 'Dev Malhotra', email: 'dev@supremex.io', pass: 'dev1234', domain: 'Video Editing & Motion Graphics', exp: '6 Years', rating: '⭐ 4.9', projects: 175, rate: '₹1,250/hr', location: 'Indore', status: 'Available', bio: 'Adobe Premiere Pro & After Effects expert.' },
+  { id: 18, name: 'Pooja Chavan', email: 'pooja@supremex.io', pass: 'pooja1234', domain: 'Handcrafted Wall Art', exp: '4 Years', rating: '⭐ 4.7', projects: 68, rate: '₹800/hr', location: 'Ratnagiri', status: 'Available', bio: 'Creates handmade wall décor and canvas artwork.' },
+  { id: 19, name: 'Yash Thakur', email: 'yash@supremex.io', pass: 'yash1234', domain: 'Cyber Security Consultant', exp: '5 Years', rating: '⭐ 4.9', projects: 84, rate: '₹1,900/hr', location: 'Gurugram', status: 'Busy', bio: 'Penetration testing, vulnerability assessment and audits.' },
+  { id: 20, name: 'Zoya Khan', email: 'zoya@supremex.io', pass: 'zoya1234', domain: 'Calligraphy & Custom Invitations', exp: '4 Years', rating: '⭐ 4.8', projects: 97, rate: '₹850/hr', location: 'Lucknow', status: 'Available', bio: 'Custom calligraphy, wedding invitations and lettering.' }
+];
+
+// Tab Switcher
+const tabs = ['Overview', 'Disputes', 'Users', 'Freelancers', 'Ledger', 'Settings'];
+tabs.forEach(tab => {
+  const btn = document.getElementById(`tab${tab}`);
+  if (btn) {
+    btn.addEventListener('click', () => {
+      tabs.forEach(t => {
+        document.getElementById(`tab${t}`)?.classList.remove('active');
+        document.getElementById(`panel${t}`)?.classList.remove('active');
+      });
+      btn.classList.add('active');
+      document.getElementById(`panel${tab}`)?.classList.add('active');
+    });
+  }
+});
+
+async function initAdminDashboard() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    const el = document.getElementById('navUser');
+    if (el) el.textContent = session.user.email;
+  }
+
+  // Fetch Users & Filter out legacy test records
+  const { data: users } = await supabase.from('users').select('*');
+  const legacyEmails = [
+    'vedharachkar@gmail.com','ved@gmail.com','vednew@gmail.com','affan@gmail.com',
+    'rihan@gmail.com','vedim@gmail.com','veddddd@gmail.com','rihannnnnn@gmail.com',
+    'uvesmukadam@gmail.com','khan@gmail.com','sample@gmail.com','mypicsbkp19@gmail.com',
+    'rihanfazlanics@gmail.com','fazlanirihan@gmail.com','aaryharachkar@gmail.com',
+    'uk8007076@gmail.com','sd250005@famt.ac.in','s240647@famt.ac.in','guhagarkarakeel@gmail.com',
+    'affanmongal@gmail.com','testuser_theme_toggle@example.com','fullname@gmail.com',
+    'taha@ex.com','demo@freelancer.com','uvesmukadam@gamil.com','uvesmukadam1@gmail.com','admin@supremex.io'
+  ];
+
+  const userList = (users || []).filter(u => !legacyEmails.includes(u.email));
+  
+  const freelancers = userList.filter(u => u.role === 'freelancer' || u.role === 'provider');
+  const clients = userList.filter(u => u.role === 'client');
+
+  const totalFreelancersCount = FREELANCERS_DATA.length + freelancers.length;
+  const totalUsersCount = totalFreelancersCount + clients.length;
+
+  document.getElementById('statTotalUsers').textContent = totalUsersCount;
+  document.getElementById('statFreelancers').textContent = totalFreelancersCount;
+  document.getElementById('statClients').textContent = clients.length;
+  document.getElementById('userCountBadge').textContent = `${totalUsersCount} Registered`;
+
+  // Render User Directory
+  const usersTbody = document.getElementById('usersTableBody');
+  if (userList.length === 0) {
+    usersTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text3)">No users registered yet.</td></tr>';
+  } else {
+    usersTbody.innerHTML = userList.map(u => `
+      <tr>
+        <td><strong>${u.email || u.id}</strong></td>
+        <td><span class="badge ${u.role === 'freelancer' ? 'badge-cyan' : u.role === 'admin' ? 'badge-gold' : 'badge-muted'}">${u.role || 'user'}</span></td>
+        <td>${u.city || u.state ? `${u.city || ''}, ${u.state || ''}` : '—'}</td>
+        <td>${u.created_at ? new Date(u.created_at).toLocaleDateString('en-IN') : '—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Render Verified Freelancers Directory (20 Records)
+  const freeTbody = document.getElementById('freelancersTableBody');
+  if (freeTbody) {
+    freeTbody.innerHTML = FREELANCERS_DATA.map(f => `
+      <tr>
+        <td><strong>#${f.id}</strong></td>
+        <td><strong>${f.name}</strong></td>
+        <td><code style="color:var(--gold-bright);background:var(--surface);padding:0.2rem 0.4rem;border-radius:4px">${f.email}</code></td>
+        <td><code style="color:var(--text2);background:var(--surface);padding:0.2rem 0.4rem;border-radius:4px">${f.pass}</code></td>
+        <td><span class="badge badge-cyan">${f.domain}</span></td>
+        <td>${f.exp}</td>
+        <td>${f.rating}</td>
+        <td><strong>${f.projects}</strong></td>
+        <td><strong style="color:var(--gold-bright)">${f.rate}</strong></td>
+        <td>${f.location}</td>
+        <td><span class="badge ${f.status === 'Available' ? 'badge-green' : 'badge-amber'}">${f.status}</span></td>
+        <td style="font-size:0.8rem;color:var(--text2);max-width:260px">${f.bio}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Fetch Deals
+  const { data: deals } = await supabase.from('deals').select('*').order('created_at', { ascending: false });
+  const dealList = deals || [];
+
+  const totalVol = dealList.reduce((sum, d) => sum + Number(d.amount || d.budget || 0), 0);
+  document.getElementById('statVolume').textContent = formatINR(totalVol);
+
+  // Render Ledger
+  const dealsTbody = document.getElementById('dealsTableBody');
+  if (dealList.length === 0) {
+    dealsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">No escrow deals created yet.</td></tr>';
+  } else {
+    dealsTbody.innerHTML = dealList.map(d => `
+      <tr>
+        <td><span class="deal-code-badge">${d.unique_code || d.id?.slice(0,8)}</span></td>
+        <td><strong>${d.title}</strong></td>
+        <td>${formatINR(d.amount || d.budget)}</td>
+        <td><span class="badge ${d.status === 'RELEASED' ? 'badge-green' : d.status === 'DISPUTED' ? 'badge-red' : 'badge-gold'}">${d.status}</span></td>
+        <td>${new Date(d.created_at).toLocaleDateString('en-IN')}</td>
+        <td><a href="status.html?id=${d.id}" class="action-btn-sm action-btn-green" style="text-decoration:none">View Tracker</a></td>
+      </tr>
+    `).join('');
+  }
+
+  // Render Disputes
+  const disputes = dealList.filter(d => d.status === 'DISPUTED' || d.status === 'VERIFYING');
+  document.getElementById('disputeCountBadge').textContent = `${disputes.length} Open`;
+  document.getElementById('disputeQueueStatus').textContent = `${disputes.length} Pending Resolution`;
+  const disputesTbody = document.getElementById('disputesTableBody');
+  if (disputes.length === 0) {
+    disputesTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">✓ No active disputes. All transactions running smoothly.</td></tr>';
+  } else {
+    disputesTbody.innerHTML = disputes.map(d => `
+      <tr>
+        <td><strong>${d.unique_code || d.id?.slice(0,6)}</strong></td>
+        <td>${d.title}</td>
+        <td>${d.client_id?.slice(0,8) || 'Client'}</td>
+        <td>${d.provider_id?.slice(0,8) || 'Freelancer'}</td>
+        <td><strong>${formatINR(d.amount || d.budget)}</strong></td>
+        <td><span class="badge badge-red">${d.status}</span></td>
+        <td>
+          <button class="action-btn-sm action-btn-green resolve-btn" data-id="${d.id}" data-action="RELEASED">Release ✅</button>
+          <button class="action-btn-sm action-btn-red resolve-btn" data-id="${d.id}" data-action="REFUNDED">Refund ↺</button>
+        </td>
+      </tr>
+    `).join('');
+
+    // Dispute Actions
+    document.querySelectorAll('.resolve-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const dealId = e.target.getAttribute('data-id');
+        const nextStatus = e.target.getAttribute('data-action');
+        const { error } = await supabase.from('deals').update({ status: nextStatus }).eq('id', dealId);
+        if (!error) {
+          alert(`Deal status updated to ${nextStatus}!`);
+          initAdminDashboard();
+        }
+      });
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initAdminDashboard);
+</script>
+<script type="module">
+// Universal Clean Logout Handler
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  try {
+    if (window.supabase && window.supabase.auth) {
+      await window.supabase.auth.signOut();
+    }
+  } catch(e) {}
+  const isInPages = window.location.pathname.includes('/pages/');
+  window.location.replace(isInPages ? '../index.html' : 'index.html');
+});
+</script>
+</body>
+</html>

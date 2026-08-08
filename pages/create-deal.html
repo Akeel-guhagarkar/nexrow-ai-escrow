@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexrow — AI Guided Deal Creation & Escrow</title>
+<link rel="stylesheet" href="../css/style.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --gold: #f59e0b;
+    --gold-bright: #fbbf24;
+    --gold-dim: rgba(245,158,11,0.12);
+    --gold-dim2: rgba(245,158,11,0.06);
+    --cyan: #38bdf8;
+    --cyan-dim: rgba(56,189,248,0.12);
+    --green: #10b981;
+    --green-dim: rgba(16,185,129,0.12);
+    --border: rgba(255,255,255,0.08);
+    --border-gold: rgba(245,158,11,0.3);
+    --card: rgba(17,24,39,0.94);
+    --surface: #0b1120;
+    --text: #f8fafc;
+    --text2: #94a3b8;
+    --text3: #64748b;
+  }
+
+  .deal-creator-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* Mode Switcher */
+  .mode-switch-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 4px;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+  .mode-tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .mode-tab {
+    padding: 0.55rem 1.3rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: 20px;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .mode-tab.active {
+    background: var(--gold-gradient);
+    color: #000;
+    font-weight: 700;
+    box-shadow: 0 2px 12px rgba(245,158,11,0.35);
+  }
+  .voice-controls-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-right: 0.8rem;
+  }
+  .voice-pill-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 20px;
+    padding: 0.35rem 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s;
+  }
+  .voice-pill-btn.active {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    color: var(--gold-bright);
+  }
+
+  /* Two Column Grid for AI Guided Mode */
+  .deal-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 2rem;
+    align-items: start;
+  }
+  @media (max-width: 960px) {
+    .deal-grid { grid-template-columns: 1fr; }
+  }
+
+  /* AI Assistant Card */
+  .ai-chat-card {
+    background: var(--card);
+    border: 1px solid var(--border-gold);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,158,11,0.15) inset;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 700px;
+    position: relative;
+  }
+
+  .ai-chat-header {
+    background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(15,23,42,0.95));
+    border-bottom: 1px solid var(--border);
+    padding: 1.1rem 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .ai-avatar-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .ai-orb {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fbbf24 10%, #d97706 70%, #92400e 100%);
+    box-shadow: 0 0 20px rgba(245,158,11,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    animation: orbPulse 3s infinite alternate;
+  }
+  @keyframes orbPulse {
+    0% { transform: scale(0.96); box-shadow: 0 0 15px rgba(245,158,11,0.4); }
+    100% { transform: scale(1.04); box-shadow: 0 0 28px rgba(245,158,11,0.8); }
+  }
+  .ai-title-txt {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+  .ai-status-indicator {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 2px;
+  }
+  .status-dot-pulse {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: blinkDot 1.5s infinite;
+  }
+  @keyframes blinkDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* Message Stream */
+  .ai-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    scroll-behavior: smooth;
+  }
+
+  .chat-bubble {
+    max-width: 88%;
+    padding: 1rem 1.25rem;
+    border-radius: 14px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    animation: bubbleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  @keyframes bubbleIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .bubble-ai {
+    align-self: flex-start;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(245,158,11,0.25);
+    color: var(--text);
+    border-top-left-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .bubble-ai strong { color: var(--gold-bright); }
+  .bubble-user {
+    align-self: flex-end;
+    background: var(--gold-gradient);
+    color: #000;
+    font-weight: 600;
+    border-top-right-radius: 4px;
+    box-shadow: 0 8px 24px rgba(245,158,11,0.25);
+  }
+
+  /* Quick Suggestion Chips */
+  .quick-chips-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.75rem;
+  }
+  .chip-btn {
+    background: var(--gold-dim);
+    border: 1px solid rgba(245,158,11,0.25);
+    color: var(--gold-bright);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .chip-btn:hover {
+    background: rgba(245,158,11,0.25);
+    border-color: var(--gold-bright);
+    transform: translateY(-1px);
+  }
+
+  /* Waveform Visualizer & Voice Banner */
+  .voice-waveform-banner {
+    background: rgba(245,158,11,0.08);
+    border-top: 1px solid rgba(245,158,11,0.15);
+    border-bottom: 1px solid rgba(245,158,11,0.15);
+    padding: 0.65rem 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gold-bright);
+  }
+  .sound-waves {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 18px;
+  }
+  .sound-bar {
+    width: 3.5px;
+    height: 8px;
+    background: var(--gold-bright);
+    border-radius: 2px;
+    transition: height 0.08s ease;
+  }
+
+  /* Live Voice Transcript Streaming Bar */
+  .live-voice-stream-preview {
+    display: none;
+    padding: 0.6rem 1.2rem;
+    background: rgba(239,68,68,0.08);
+    border-top: 1px solid rgba(239,68,68,0.2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: #fca5a5;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .live-voice-stream-preview.active {
+    display: flex;
+  }
+
+  /* Input Footer Bar */
+  .ai-chat-input-bar {
+    padding: 1rem 1.2rem;
+    background: rgba(11,17,32,0.95);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
+  .ai-text-input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 0.75rem 1rem;
+    font-size: 0.88rem;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .ai-text-input:focus {
+    border-color: var(--gold);
+    background: rgba(245,158,11,0.04);
+  }
+  .mic-action-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--gold-dim);
+    border: 1.5px solid var(--gold);
+    color: var(--gold-bright);
+    font-size: 1.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    box-shadow: 0 0 15px rgba(245,158,11,0.25);
+  }
+  .mic-action-btn:hover {
+    background: var(--gold-gradient);
+    color: #000;
+    transform: scale(1.08);
+  }
+  .mic-action-btn.listening {
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: #fff !important;
+    animation: micPulse 1.2s infinite;
+  }
+  @keyframes micPulse {
+    0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); transform: scale(1); }
+    50% { box-shadow: 0 0 0 16px rgba(239,68,68,0); transform: scale(1.08); }
+    100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); transform: scale(1); }
+  }
+  .send-msg-btn {
+    background: var(--gold-gradient);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-weight: 700;
+    padding: 0 1.3rem;
+    height: 48px;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+  .send-msg-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  /* Live Deal Preview Card (Right Column) */
+  .deal-preview-pane {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.8rem;
+    box-shadow: var(--shadow-lg);
+    position: sticky;
+    top: 90px;
+  }
+  .preview-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--cyan);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .preview-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.6rem;
+    line-height: 1.25;
+  }
+  .preview-desc {
+    font-size: 0.85rem;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 1.2rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 0.8rem;
+  }
+
+  .preview-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+  }
+  .p-stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+  }
+  .p-stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.2rem;
+  }
+  .p-stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--gold-bright);
+  }
+
+  .milestone-mini-breakdown {
+    background: rgba(245,158,11,0.04);
+    border: 1px solid rgba(245,158,11,0.15);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.2rem;
+  }
+  .mm-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+  }
+  .mm-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--text2);
+    padding: 0.25rem 0;
+  }
+
+  .escrow-guarantee-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 8px;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.75rem;
+    color: var(--green);
+    margin-bottom: 1.5rem;
+  }
+
+  .final-create-btn {
+    width: 100%;
+    padding: 0.95rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    background: var(--gold-gradient);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 20px rgba(245,158,11,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .final-create-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(245,158,11,0.5);
+  }
+
+  /* Manual Mode Form Area */
+  .manual-form-area {
+    display: none;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  .manual-form-area.show {
+    display: block;
+    animation: fadeUp 0.35s ease-out both;
+  }
+  .form-section {
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    margin-bottom: 1.2rem;
+    background: var(--card);
+    border-radius: 12px;
+  }
+  .form-section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold-bright);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .form-section-title::before { content: '//'; color: var(--gold); }
+
+  /* Code Generated Success Screen */
+  .code-display {
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    display: none;
+  }
+  .code-display.show {
+    display: block;
+    animation: fadeUp 0.35s ease both;
+  }
+  .code-value {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 900;
+    color: var(--gold-bright);
+    letter-spacing: 0.12em;
+    margin: 1.2rem 0;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(168,85,247,0.15));
+    border: 2px solid var(--gold);
+    padding: 0.8rem 2.2rem;
+    border-radius: 14px;
+    display: inline-block;
+    box-shadow: 0 0 35px rgba(245,158,11,0.4), 0 0 15px rgba(168,85,247,0.25) inset;
+    animation: codeBoxPulse 2.5s infinite alternate, popIn 0.5s ease both;
+  }
+  .code-value::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 40%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transform: rotate(30deg);
+    animation: sweepLight 3s infinite;
+  }
+  @keyframes sweepLight {
+    0% { left: -60%; }
+    50%, 100% { left: 140%; }
+  }
+  @keyframes codeBoxPulse {
+    0% { transform: scale(0.98); box-shadow: 0 0 20px rgba(245,158,11,0.3); }
+    100% { transform: scale(1.03); box-shadow: 0 0 45px rgba(245,158,11,0.6); }
+  }
+  @keyframes popIn {
+    0% { opacity: 0; transform: scale(0.7); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .code-copy-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    background: var(--gold-dim);
+    border: 1px solid rgba(245,158,11,0.3);
+    color: var(--gold);
+    padding: 0.6rem 1.4rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .code-copy-btn:hover { background: rgba(245,158,11,0.25); color: #fff; }
+</style>
+</head>
+<body class="fade-in">
+
+<nav class="topnav">
+  <a href="client-dashboard.html" class="nav-logo">Nex<span>row</span> <span style="font-size:0.7rem;font-weight:600;color:var(--gold-bright);margin-left:0.4rem;padding:0.15rem 0.5rem;background:var(--gold-dim);border-radius:12px;border:1px solid rgba(245,158,11,0.3)">AI ESCROW DEAL CREATOR</span></a>
+  <div class="nav-right">
+    <a href="how-it-works.html" class="nav-link" style="font-size:0.78rem">🚀 Walkthrough</a>
+    <a href="client-dashboard.html" class="nav-link" style="font-size:0.78rem">Dashboard</a>
+    <span class="nav-user" id="navUser"></span>
+    <button class="nav-logout" id="logoutBtn">Logout</button>
+  </div>
+</nav>
+
+<div class="deal-creator-wrap">
+  <!-- Mode Switcher -->
+  <div class="mode-switch-bar fade-up">
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tabAiMode">
+        <span>🤖</span> AI Voice &amp; Chat Guided Setup
+      </button>
+      <button class="mode-tab" id="tabManualMode">
+        <span>📝</span> Manual Form Entry
+      </button>
+    </div>
+    <div class="voice-controls-toggle">
+      <button class="voice-pill-btn active" id="toggleSpeechVoiceBtn" title="Toggle AI Voice Readout">
+        <span id="speechIcon">🔊</span> AI Voice: <strong id="voiceStatusLabel">ON</strong>
+      </button>
+      <button class="voice-pill-btn" id="resetAiFlowBtn" title="Restart AI questions">
+        <span>🔄</span> Restart
+      </button>
+    </div>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <!-- ─────────────────────────────────────────────────────────────────
+       1. AI VOICE & TEXT GUIDED SETUP (Default Mode)
+  ────────────────────────────────────────────────────────────────── -->
+  <div id="aiModeArea" class="deal-grid fade-up">
+    <!-- Left Chat Box -->
+    <div class="ai-chat-card">
+      <div class="ai-chat-header">
+        <div class="ai-avatar-badge">
+          <div class="ai-orb">🤖</div>
+          <div>
+            <div class="ai-title-txt">Nexrow AI Escrow Setup Assistant</div>
+            <div class="ai-status-indicator" id="aiStatusTxt">
+              <span class="status-dot-pulse"></span> Ready · Speak with 🎙️ or select chips
+            </div>
+          </div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--gold-bright);background:var(--gold-dim);padding:0.25rem 0.6rem;border-radius:12px;border:1px solid rgba(245,158,11,0.2)" id="stepProgressBadge">
+          Step 1 of 5
+        </div>
+      </div>
+
+      <!-- Live Voice Waveform Banner (Active when listening/speaking) -->
+      <div class="voice-waveform-banner" id="voiceWaveform" style="display:none">
+        <span id="waveformMsg">🎙️ Listening to your voice... Speak your answer</span>
+        <div class="sound-waves" id="soundWavesBox">
+          <div class="sound-bar" id="sb1"></div>
+          <div class="sound-bar" id="sb2"></div>
+          <div class="sound-bar" id="sb3"></div>
+          <div class="sound-bar" id="sb4"></div>
+          <div class="sound-bar" id="sb5"></div>
+          <div class="sound-bar" id="sb6"></div>
+          <div class="sound-bar" id="sb7"></div>
+          <div class="sound-bar" id="sb8"></div>
+        </div>
+      </div>
+
+      <!-- Live Speech-to-text Stream Preview -->
+      <div class="live-voice-stream-preview" id="liveStreamPreview">
+        <span>🎙️ Hearing:</span>
+        <strong id="liveStreamTxt" style="color:#fff">...</strong>
+      </div>
+
+      <!-- Chat Messages Stream -->
+      <div class="ai-chat-messages" id="aiChatStream">
+        <!-- AI Initial Greeting Bubble -->
+      </div>
+
+      <!-- Input Bar -->
+      <div class="ai-chat-input-bar">
+        <button class="mic-action-btn" id="micBtn" title="Click to Speak Answer via Microphone">
+          🎙️
+        </button>
+        <input type="text" class="ai-text-input" id="aiUserInput" placeholder="Speak with 🎙️ or type your answer here..." autocomplete="off"/>
+        <button class="send-msg-btn" id="aiSendBtn">
+          <span>Send</span> ➔
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Live Auto-Filled Deal Preview -->
+    <div class="deal-preview-pane">
+      <div class="preview-badge">
+        <span>⚡</span> Live Escrow Contract Sync
+      </div>
+      <div class="preview-title" id="pvTitle">Untitled Escrow Project</div>
+      <div class="preview-desc" id="pvDesc">// Describe your project with the AI assistant on the left...</div>
+
+      <div class="preview-stats-grid">
+        <div class="p-stat-box">
+          <div class="p-stat-label">Budget Locked</div>
+          <div class="p-stat-val" id="pvBudget">₹0</div>
+        </div>
+        <div class="p-stat-box">
+          <div class="p-stat-label">Expected Deadline</div>
+          <div class="p-stat-val" id="pvDeadline" style="font-size:0.92rem">Not Set</div>
+        </div>
+      </div>
+
+      <div class="milestone-mini-breakdown">
+        <div class="mm-title">// Milestone Payout Schedule (Automated)</div>
+        <div class="mm-row"><span>M1 · Wireframes (30%)</span><strong id="pvM1" style="color:var(--text)">₹0</strong></div>
+        <div class="mm-row"><span>M2 · High-Fi Deliverable (40%)</span><strong id="pvM2" style="color:var(--text)">₹0</strong></div>
+        <div class="mm-row"><span>M3 · Final Delivery &amp; OTP (30%)</span><strong id="pvM3" style="color:var(--text)">₹0</strong></div>
+      </div>
+
+      <div class="p-stat-box" style="margin-bottom:1.2rem">
+        <div class="p-stat-label">Delivery Scope</div>
+        <div style="font-size:0.8rem;color:var(--text)" id="pvDelivery">Pending AI details...</div>
+      </div>
+
+      <div class="escrow-guarantee-pill">
+        <span style="font-size:1.1rem">🔒</span>
+        <span>Funds held in 256-bit vault. Only released after verification &amp; OTP.</span>
+      </div>
+
+      <button class="final-create-btn" id="confirmAiDealBtn">
+        🚀 Confirm &amp; Generate Escrow Code →
+      </button>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────────
+       2. MANUAL FORM ENTRY (Secondary Tab)
+  ────────────────────────────────────────────────────────────────── -->
+  <div id="manualModeArea" class="manual-form-area">
+    <div class="form-section">
+      <div class="form-section-title">Service Details</div>
+      <div class="field"><label>Service / Product Title</label><input type="text" id="title" placeholder="e.g. Logo Design for Startup"/></div>
+      <div class="field"><label>Description</label><textarea id="description" placeholder="Describe what will be delivered..."></textarea></div>
+      <div class="field"><label>Deadline</label><input type="date" id="deadline"/></div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Budget</div>
+      <div class="field">
+        <label>Amount (INR)</label>
+        <div class="amount-wrap"><span class="amount-prefix">₹</span><input type="number" id="amount" placeholder="32000" min="1"/></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Delivery Details</div>
+      <div class="field"><label>How will work be delivered?</label><textarea id="deliveryDetails" placeholder="e.g. ZIP file via upload, GitHub repository, Figma link..."></textarea></div>
+    </div>
+    <div class="terms-box">
+      <p>By creating this deal, you agree that payment will be <strong>locked in escrow</strong> and only released after <strong>multi-layer verification</strong> is complete — including proof upload and OTP confirmation.</p>
+    </div>
+    <div class="mt-3" style="display:flex;gap:0.8rem">
+      <a href="client-dashboard.html" class="btn btn-outline">← Cancel</a>
+      <button class="btn btn-gold" id="createBtn" style="flex:1">Create Deal &amp; Generate Code</button>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────────
+       3. CODE GENERATED & MATCHED FREELANCERS RESULT SCREEN
+  ────────────────────────────────────────────────────────────────── -->
+  <div class="code-display" id="codeDisplay">
+    <div style="font-size:2.4rem;margin-bottom:0.5rem">🎉</div>
+    <h2 style="font-size:1.8rem;margin-bottom:0.4rem;font-family:'Outfit',sans-serif">Escrow Deal Created!</h2>
+    <p style="font-size:0.88rem;color:var(--text2);margin-bottom:1rem">Share this unique deal code or select a matched verified freelancer below:</p>
+    <div>
+      <div class="code-value" id="generatedCode">—</div>
+    </div>
+    <div style="margin-bottom:1.8rem">
+      <button class="code-copy-btn" id="copyBtn">📋 Copy Deal Code</button>
+    </div>
+
+    <!-- Matched Freelancers Box -->
+    <div id="freelancerMatchesBox" style="margin-top:2rem;text-align:left;border-top:1px solid var(--border);padding-top:1.5rem">
+      <h3 id="matchingTitle" style="font-size:1.1rem;margin-bottom:0.4rem;color:var(--gold-bright);font-family:'Outfit',sans-serif">🎯 Matched Freelancers Found for Your Deal:</h3>
+      <p style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text2);margin-bottom:1.2rem" id="matchingSub">// Select any verified freelancer below to launch the live escrow walkthrough &amp; vault:</p>
+      <div id="freelancerCardsList" style="display:flex;flex-direction:column;gap:1rem"></div>
+    </div>
+
+    <div class="mt-4" style="display:flex;gap:0.8rem;justify-content:center">
+      <a href="client-dashboard.html" class="btn btn-outline btn-sm">← Client Dashboard</a>
+      <a href="how-it-works.html" class="btn btn-gold btn-sm" id="viewDealBtn">🚀 Launch Escrow Workspace →</a>
+    </div>
+  </div>
+</div>
+
+<!-- Freelancer Profile Modal -->
+<div id="freelancerProfileModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:var(--card);border:1px solid var(--gold);border-radius:var(--radius-md);max-width:540px;width:100%;padding:2rem;box-shadow:0 20px 40px rgba(0,0,0,0.6);position:relative;animation:fadeUp 0.25s ease;">
+    <button id="closeModalBtn" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text3);font-size:1.5rem;cursor:pointer;">✕</button>
+    
+    <div style="display:flex;align-items:center;gap:1.2rem;margin-bottom:1.5rem">
+      <div id="modalAvatar" style="width:60px;height:60px;border-radius:50%;background:var(--gold-dim);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:bold;color:var(--gold)">👤</div>
+      <div>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <h2 id="modalName" style="font-size:1.25rem;color:var(--text);margin:0">Freelancer Name</h2>
+          <span class="badge badge-gold" style="font-size:0.7rem">✓ Verified Pro</span>
+        </div>
+        <div id="modalDomain" class="badge badge-cyan" style="margin-top:0.3rem">Domain / Specialization</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.8rem;background:var(--surface);padding:1rem;border-radius:var(--radius-sm);margin-bottom:1.5rem;text-align:center;font-size:0.82rem">
+      <div>
+        <div style="color:var(--text3);font-size:0.68rem;font-family:'DM Mono',monospace">RATING</div>
+        <strong id="modalRating" style="color:var(--gold-bright);font-size:0.95rem">⭐ 4.9</strong>
+      </div>
+      <div>
+        <div style="color:var(--text3);font-size:0.68rem;font-family:'DM Mono',monospace">COMPLETED</div>
+        <strong id="modalProjects" style="font-size:0.95rem">128 Projects</strong>
+      </div>
+      <div>
+        <div style="color:var(--text3);font-size:0.68rem;font-family:'DM Mono',monospace">HOURLY RATE</div>
+        <strong id="modalRate" style="color:var(--green);font-size:0.95rem">₹1,500/hr</strong>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.2rem">
+      <div style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--gold);margin-bottom:0.4rem">// EXPERTISE &amp; BIO</div>
+      <p id="modalBio" style="font-size:0.88rem;color:var(--text2);line-height:1.5">Full bio description will be shown here...</p>
+    </div>
+
+    <div style="margin-bottom:1.5rem;font-size:0.8rem;color:var(--text3);display:flex;gap:1.5rem;flex-wrap:wrap;background:var(--surface);padding:0.8rem;border-radius:var(--radius-sm)">
+      <span>📍 Location: <strong id="modalLocation" style="color:var(--text)">Location</strong></span>
+      <span>⏳ Exp: <strong id="modalExp" style="color:var(--text)">5 Years</strong></span>
+      <span>📧 Login: <code id="modalEmail" style="color:var(--gold-bright)">email@nexrow.io</code></span>
+    </div>
+
+    <div style="display:flex;gap:1rem;justify-content:flex-end;border-top:1px solid var(--border);padding-top:1.2rem">
+      <button id="modalCloseActionBtn" class="btn btn-outline btn-sm">✕ Close</button>
+      <button id="modalAssignBtn" class="btn btn-gold btn-sm">🤝 Auto-Assign to Deal</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = 'https://qhcxwwobfqsecwqsvwid.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoY3h3d29iZnFzZWN3cXN2d2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODc0NzQsImV4cCI6MjA5NDc2MzQ3NH0.ZIcAU6PjSwEHeGZtD8B8NKJEd3YifgZa7S7hR9zbkMM';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const isRoot = !window.location.pathname.includes('/pages/');
+
+// ── Auth verification ──
+async function requireAuth(callback) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const localUser = JSON.parse(localStorage.getItem('sx_active_user') || 'null');
+  const activeUser = session?.user || localUser;
+  if (!activeUser) {
+    window.location.href = '../index.html';
+    return;
+  }
+  callback(activeUser, session);
+}
+
+function setNavUser(user) {
+  const el = document.getElementById('navUser');
+  if (el && user && user.email) el.textContent = user.email.length > 24 ? user.email.slice(0, 22) + '…' : user.email;
+}
+
+function setupLogout() {
+  const btn = document.getElementById('logoutBtn');
+  if (btn) btn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = isRoot ? 'index.html' : '../index.html';
+  });
+}
+
+function showAlert(containerId, type, message) {
+  const icons = { error: '✕', success: '✓', info: 'ℹ', warning: '⚠' };
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = `<div class='alert alert-${type}'><span>${icons[type] || '•'}</span><span>${message}</span></div>`;
+  setTimeout(() => { el.innerHTML = ''; }, 5000);
+}
+
+function genDealCode() {
+  const chars = '0123456789'; let code = '';
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return 'NEX-' + code;
+}
+function genDealId() {
+  return 'NX-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+}
+function generateOTP() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+// ── 20+ Verified Freelancers Catalog ──
+const FREELANCERS_DATABASE = [
+  { id: 1, name: 'Aarav Sharma', email: 'aarav@nexrow.io', pass: 'aarav1234', domain: 'Full Stack Web Development', exp: '5 Years', rating: '⭐ 4.9', projects: 128, rate: '₹1,500/hr', location: 'Mumbai', status: 'Available', bio: 'Builds scalable React, Node.js & MongoDB applications.', keywords: ['web', 'react', 'node', 'mongodb', 'full stack', 'app', 'website', 'code', 'js', 'frontend', 'backend', 'developer'] },
+  { id: 2, name: 'Priya Patel', email: 'priya@nexrow.io', pass: 'priya1234', domain: 'UI/UX Design', exp: '4 Years', rating: '⭐ 4.8', projects: 95, rate: '₹1,200/hr', location: 'Ahmedabad', status: 'Available', bio: 'Creates premium mobile and web interfaces using Figma.', keywords: ['ui', 'ux', 'design', 'figma', 'mobile', 'web interface', 'app design', 'wireframe', 'prototype'] },
+  { id: 3, name: 'Rohan Mehta', email: 'rohan@nexrow.io', pass: 'rohan1234', domain: 'Logo & Brand Identity', exp: '6 Years', rating: '⭐ 5.0', projects: 210, rate: '₹1,000/hr', location: 'Pune', status: 'Busy', bio: 'Expert in minimalist and luxury brand identity.', keywords: ['logo', 'brand', 'identity', 'branding', 'vector', 'minimalist', 'business logo'] },
+  { id: 4, name: 'Sneha Kulkarni', email: 'sneha@nexrow.io', pass: 'sneha1234', domain: 'Sketch Artist', exp: '3 Years', rating: '⭐ 4.7', projects: 76, rate: '₹850/hr', location: 'Nagpur', status: 'Available', bio: 'Hyper-realistic pencil portraits and custom sketches.', keywords: ['sketch', 'sketching', 'pencil', 'portrait', 'hand drawn', 'drawing', 'artist', 'art'] },
+  { id: 5, name: 'Aditya Verma', email: 'aditya@nexrow.io', pass: 'aditya1234', domain: 'WordPress Development', exp: '5 Years', rating: '⭐ 4.8', projects: 140, rate: '₹900/hr', location: 'Delhi', status: 'Available', bio: 'Develops SEO-friendly business websites.', keywords: ['wordpress', 'wp', 'cms', 'website', 'blog', 'seo', 'elementor'] },
+  { id: 6, name: 'Neha Singh', email: 'neha@nexrow.io', pass: 'neha1234', domain: 'Digital Painting', exp: '4 Years', rating: '⭐ 4.9', projects: 88, rate: '₹1,100/hr', location: 'Jaipur', status: 'Busy', bio: 'Creates fantasy, concept and portrait digital artwork.', keywords: ['digital painting', 'painting', 'digital art', 'concept art', 'fantasy', 'portrait art'] },
+  { id: 7, name: 'Karan Joshi', email: 'karan@nexrow.io', pass: 'karan1234', domain: 'Mobile App Development', exp: '6 Years', rating: '⭐ 4.9', projects: 135, rate: '₹1,700/hr', location: 'Bengaluru', status: 'Available', bio: 'Flutter & React Native expert for Android/iOS apps.', keywords: ['mobile', 'app', 'android', 'ios', 'flutter', 'react native', 'application'] },
+  { id: 8, name: 'Isha Kapoor', email: 'isha@nexrow.io', pass: 'isha1234', domain: 'Graphic Design', exp: '4 Years', rating: '⭐ 4.8', projects: 160, rate: '₹950/hr', location: 'Chandigarh', status: 'Available', bio: 'Social media creatives, brochures and banners.', keywords: ['graphic', 'graphics', 'social media', 'banner', 'brochure', 'poster', 'creative'] },
+  { id: 9, name: 'Rahul Nair', email: 'rahul@nexrow.io', pass: 'rahul1234', domain: 'Backend Development', exp: '7 Years', rating: '⭐ 4.9', projects: 182, rate: '₹1,600/hr', location: 'Kochi', status: 'Busy', bio: 'Builds secure REST APIs using Node.js & Express.', keywords: ['backend', 'api', 'express', 'node', 'database', 'sql', 'rest api', 'server'] },
+  { id: 10, name: 'Meera Deshmukh', email: 'meera@nexrow.io', pass: 'meera1234', domain: 'Pot Design & Ceramic Art', exp: '5 Years', rating: '⭐ 4.8', projects: 92, rate: '₹700/hr', location: 'Kolhapur', status: 'Available', bio: 'Handmade decorative and customized ceramic pots.', keywords: ['pot', 'ceramic', 'handicraft', 'pottery', 'decor', 'decorative', 'handmade'] },
+  { id: 11, name: 'Vikram Rao', email: 'vikram@nexrow.io', pass: 'vikram1234', domain: 'Frontend Development', exp: '5 Years', rating: '⭐ 4.8', projects: 155, rate: '₹1,300/hr', location: 'Hyderabad', status: 'Available', bio: 'React, Next.js and Tailwind CSS specialist.', keywords: ['frontend', 'react', 'next.js', 'css', 'tailwind', 'html', 'ui developer'] },
+  { id: 12, name: 'Ananya Roy', email: 'ananya@nexrow.io', pass: 'ananya1234', domain: 'Watercolor Painting', exp: '6 Years', rating: '⭐ 5.0', projects: 115, rate: '₹900/hr', location: 'Kolkata', status: 'Busy', bio: 'Professional watercolor artist for portraits and landscapes.', keywords: ['watercolor', 'water colour', 'painting', 'landscape', 'canvas', 'color art'] },
+  { id: 13, name: 'Soham Patil', email: 'soham@nexrow.io', pass: 'soham1234', domain: '3D Modeling & Rendering', exp: '4 Years', rating: '⭐ 4.7', projects: 74, rate: '₹1,400/hr', location: 'Nashik', status: 'Available', bio: 'Creates realistic 3D models for architecture and products.', keywords: ['3d', 'modeling', 'rendering', 'blender', 'cad', 'architecture', '3d model'] },
+  { id: 14, name: 'Kavya Menon', email: 'kavya@nexrow.io', pass: 'kavya1234', domain: 'Content Writing', exp: '5 Years', rating: '⭐ 4.8', projects: 225, rate: '₹750/hr', location: 'Chennai', status: 'Available', bio: 'SEO blogs, technical writing and website content.', keywords: ['content', 'writing', 'blog', 'article', 'seo content', 'copywriting', 'writer'] },
+  { id: 15, name: 'Arjun Gupta', email: 'arjun@nexrow.io', pass: 'arjun1234', domain: 'AI & Machine Learning', exp: '3 Years', rating: '⭐ 4.9', projects: 61, rate: '₹2,000/hr', location: 'Noida', status: 'Busy', bio: 'Develops AI chatbots and predictive ML models.', keywords: ['ai', 'ml', 'machine learning', 'python', 'chatbot', 'chatgpt', 'data science'] },
+  { id: 16, name: 'Riya Fernandes', email: 'riya@nexrow.io', pass: 'riya1234', domain: 'Illustration', exp: '5 Years', rating: '⭐ 4.8', projects: 109, rate: '₹1,000/hr', location: 'Goa', status: 'Available', bio: "Children's books, editorial and commercial illustrations.", keywords: ['illustration', 'illustrator', 'character', 'book cover', 'editorial art'] },
+  { id: 17, name: 'Dev Malhotra', email: 'dev@nexrow.io', pass: 'dev1234', domain: 'Video Editing & Motion Graphics', exp: '6 Years', rating: '⭐ 4.9', projects: 175, rate: '₹1,250/hr', location: 'Indore', status: 'Available', bio: 'Adobe Premiere Pro & After Effects expert.', keywords: ['video', 'editing', 'motion graphics', 'youtube', 'reels', 'after effects', 'video editor'] },
+  { id: 18, name: 'Pooja Chavan', email: 'pooja@nexrow.io', pass: 'pooja1234', domain: 'Handcrafted Wall Art', exp: '4 Years', rating: '⭐ 4.7', projects: 68, rate: '₹800/hr', location: 'Ratnagiri', status: 'Available', bio: 'Creates handmade wall décor and canvas artwork.', keywords: ['wall art', 'decor', 'craft', 'handmade', 'canvas', 'home decor'] },
+  { id: 19, name: 'Yash Thakur', email: 'yash@nexrow.io', pass: 'yash1234', domain: 'Cyber Security Consultant', exp: '5 Years', rating: '⭐ 4.9', projects: 84, rate: '₹1,900/hr', location: 'Gurugram', status: 'Busy', bio: 'Penetration testing, vulnerability assessment and audits.', keywords: ['cyber', 'security', 'audit', 'penetration testing', 'ethical hacking', 'safety'] },
+  { id: 20, name: 'Zoya Khan', email: 'zoya@nexrow.io', pass: 'zoya1234', domain: 'Calligraphy & Custom Invitations', exp: '4 Years', rating: '⭐ 4.8', projects: 97, rate: '₹850/hr', location: 'Lucknow', status: 'Available', bio: 'Custom calligraphy, wedding invitations and lettering.', keywords: ['calligraphy', 'invitation', 'wedding', 'lettering', 'custom card', 'card design'] }
+];
+
+function findMatchingFreelancers(titleText, descText) {
+  const combined = (titleText + ' ' + descText).toLowerCase();
+  let matches = FREELANCERS_DATABASE.filter(f => {
+    return f.keywords.some(kw => combined.includes(kw)) ||
+           combined.includes(f.name.toLowerCase()) ||
+           combined.includes(f.domain.toLowerCase());
+  });
+  const isDirectMatch = matches.length > 0;
+  if (!isDirectMatch) {
+    matches = FREELANCERS_DATABASE.slice(0, 4);
+  }
+  return { matches, isDirectMatch };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADVANCED AI VOICE & TEXT GUIDED SETUP ENGINE
+// ─────────────────────────────────────────────────────────────────
+const aiState = {
+  step: 0,
+  voiceEnabled: true,
+  isListening: false,
+  recognition: null,
+  speechSynth: window.speechSynthesis || null,
+  audioContext: null,
+  analyser: null,
+  micStream: null,
+  animFrameId: null,
+  deal: {
+    title: '',
+    description: '',
+    deadline: '',
+    budget: 0,
+    deliveryDetails: ''
+  }
+};
+
+// Fuzzy budget parser for natural speech: "50 thousand", "35k", "one lakh", "25 grand", "12000 rupees"
+function parseNaturalBudget(val) {
+  const lower = val.toLowerCase().trim();
+  if (lower.includes('lakh') || lower.includes('lac')) {
+    const num = parseFloat(lower.match(/[\d\.]+/)?.[0] || '1');
+    return num * 100000;
+  }
+  if (lower.includes('thousand') || lower.includes('k') || lower.includes('grand')) {
+    const num = parseFloat(lower.match(/[\d\.]+/)?.[0] || '1');
+    return num * 1000;
+  }
+  const clean = lower.replace(/[^0-9.]/g, '');
+  const num = parseFloat(clean);
+  return isNaN(num) || num <= 0 ? 32000 : num;
+}
+
+// Fuzzy deadline parser: "in 3 days", "next friday", "2 weeks", "in one month"
+function parseNaturalDeadline(val) {
+  const lower = val.toLowerCase().trim();
+  const d = new Date();
+  if (lower.includes('tomorrow') || lower.includes('1 day')) {
+    d.setDate(d.getDate() + 1);
+  } else if (lower.includes('3 day') || lower.includes('three day')) {
+    d.setDate(d.getDate() + 3);
+  } else if (lower.includes('week') || lower.includes('7 day') || lower.includes('seven day')) {
+    d.setDate(d.getDate() + 7);
+  } else if (lower.includes('2 week') || lower.includes('two week') || lower.includes('14 day')) {
+    d.setDate(d.getDate() + 14);
+  } else if (lower.includes('month') || lower.includes('30 day')) {
+    d.setDate(d.getDate() + 30);
+  } else {
+    const parsed = new Date(val);
+    if (!isNaN(parsed.getTime())) return parsed.toISOString().split('T')[0];
+    d.setDate(d.getDate() + 7);
+  }
+  return d.toISOString().split('T')[0];
+}
+
+const AI_STEPS = [
+  {
+    key: 'title',
+    question: "Hello! I'm your Nexrow AI Escrow Assistant. What is your **Project or Service Title**? (e.g. Logo Design, Web App, Mobile App)",
+    speakText: "Hello! I'm your Nexrow AI Escrow Assistant. What is your Project or Service Title?",
+    chips: [
+      "🎨 Logo & Brand Identity",
+      "💻 Full Stack Web Development",
+      "📱 Mobile App Development",
+      "✨ UI/UX Figma Design",
+      "✍️ SEO Content Writing"
+    ],
+    placeholder: "e.g. Modern Web Application with Escrow...",
+    parse: (val) => val.replace(/^[🎨💻📱✨✍️]\s*/, '').replace(/^(my project is|title is|project title is|i need)\s*/i, '').trim()
+  },
+  {
+    key: 'description',
+    question: "Got it! Can you give a brief **Description** of what the freelancer will build and deliver?",
+    speakText: "Got it! Can you give a brief Description of what the freelancer will build and deliver?",
+    chips: [
+      "Full responsive frontend with Node.js REST API & Supabase database",
+      "Minimalist vector logo package with brand color guide & typography",
+      "Interactive 15-screen mobile app in Flutter for iOS and Android",
+      "Figma design system with auto-layout and interactive prototypes"
+    ],
+    placeholder: "e.g. Clean design, source files, documentation...",
+    parse: (val) => val.replace(/^(the description is|scope is|they will deliver)\s*/i, '').trim()
+  },
+  {
+    key: 'deadline',
+    question: "Great! What is the **Expected Deadline** for this deliverable?",
+    speakText: "Great! What is the Expected Deadline for this deliverable?",
+    chips: [
+      "⚡ In 3 Days",
+      "📅 In 1 Week",
+      "🗓️ In 2 Weeks",
+      "📅 In 1 Month"
+    ],
+    placeholder: "e.g. in 7 days or 2 weeks...",
+    parse: (val) => parseNaturalDeadline(val)
+  },
+  {
+    key: 'budget',
+    question: "Awesome. What is your **Project Budget in INR (₹)** to lock in the secure multi-sig escrow vault?",
+    speakText: "Awesome. What is your Project Budget in Indian Rupees to lock in the secure multi-sig escrow vault?",
+    chips: [
+      "₹10,800",
+      "₹25,000",
+      "₹32,000",
+      "₹50,000",
+      "₹1,00,000"
+    ],
+    placeholder: "e.g. 50 thousand, 32000, or 1 lakh...",
+    parse: (val) => parseNaturalBudget(val)
+  },
+  {
+    key: 'deliveryDetails',
+    question: "Lastly, **how will the work be delivered** for AI inspection & proof review?",
+    speakText: "Lastly, how will the work be delivered for AI inspection and proof review?",
+    chips: [
+      "🔗 GitHub Repository & Live Vercel Link",
+      "🎨 Figma Design Link & Asset Package",
+      "📦 ZIP Archive with Source Code & Docs",
+      "🚀 Live Staging URL & Video Walkthrough"
+    ],
+    placeholder: "e.g. GitHub link, Figma URL, or ZIP upload...",
+    parse: (val) => val.replace(/^(delivery is|deliver via|through)\s*/i, '').trim()
+  }
+];
+
+// Speak text using Web SpeechSynthesis
+function speakAI(text) {
+  if (!aiState.voiceEnabled || !aiState.speechSynth) return;
+  try {
+    aiState.speechSynth.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.02;
+    utterance.pitch = 1.0;
+    
+    // Pick best natural voice if available
+    const voices = aiState.speechSynth.getVoices();
+    const goodVoice = voices.find(v => (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha') || v.name.includes('Daniel') || v.name.includes('Heera') || v.name.includes('Ravi')) && v.lang.startsWith('en'));
+    if (goodVoice) utterance.voice = goodVoice;
+
+    utterance.onstart = () => {
+      const el = document.getElementById('aiStatusTxt');
+      if (el) el.innerHTML = `<span class="status-dot-pulse" style="background:var(--gold);box-shadow:0 0 8px var(--gold)"></span> 🔊 AI is Speaking...`;
+      document.getElementById('voiceWaveform').style.display = 'flex';
+      document.getElementById('waveformMsg').textContent = '🔊 AI Speaking...';
+    };
+
+    utterance.onend = () => {
+      const el = document.getElementById('aiStatusTxt');
+      if (el) el.innerHTML = `<span class="status-dot-pulse"></span> Ready · Speak with 🎙️ or select chips`;
+      document.getElementById('voiceWaveform').style.display = 'none';
+      
+      // Auto open microphone if voice enabled
+      if (aiState.voiceEnabled && aiState.step < AI_STEPS.length) {
+        setTimeout(() => startListening(), 300);
+      }
+    };
+
+    aiState.speechSynth.speak(utterance);
+  } catch(e) {}
+}
+
+// Render AI chat message
+function appendAiMessage(htmlContent, chips = []) {
+  const stream = document.getElementById('aiChatStream');
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble bubble-ai';
+  bubble.innerHTML = `<div>${htmlContent}</div>`;
+  
+  if (chips && chips.length > 0) {
+    const chipsWrap = document.createElement('div');
+    chipsWrap.className = 'quick-chips-wrap';
+    chips.forEach(chipText => {
+      const btn = document.createElement('button');
+      btn.className = 'chip-btn';
+      btn.textContent = chipText;
+      btn.onclick = () => handleUserAnswer(chipText);
+      chipsWrap.appendChild(btn);
+    });
+    bubble.appendChild(chipsWrap);
+  }
+
+  stream.appendChild(bubble);
+  stream.scrollTop = stream.scrollHeight;
+}
+
+function appendUserMessage(text) {
+  const stream = document.getElementById('aiChatStream');
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble bubble-user';
+  bubble.textContent = text;
+  stream.appendChild(bubble);
+  stream.scrollTop = stream.scrollHeight;
+}
+
+// Update Live Preview and Manual form inputs
+function updateLivePreview() {
+  const d = aiState.deal;
+  document.getElementById('pvTitle').textContent = d.title || 'Untitled Escrow Project';
+  document.getElementById('pvDesc').textContent = d.description || '// Describe your project with the AI assistant on the left...';
+  document.getElementById('pvBudget').textContent = d.budget > 0 ? `₹${d.budget.toLocaleString('en-IN')}` : '₹0';
+  document.getElementById('pvDeadline').textContent = d.deadline ? new Date(d.deadline).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not Set';
+  document.getElementById('pvDelivery').textContent = d.deliveryDetails || 'Pending AI details...';
+
+  // Milestone splits (30% / 40% / 30%)
+  const b = d.budget || 0;
+  const m1 = Math.round(b * 0.3);
+  const m2 = Math.round(b * 0.4);
+  const m3 = b - m1 - m2;
+  document.getElementById('pvM1').textContent = `₹${m1.toLocaleString('en-IN')}`;
+  document.getElementById('pvM2').textContent = `₹${m2.toLocaleString('en-IN')}`;
+  document.getElementById('pvM3').textContent = `₹${m3.toLocaleString('en-IN')}`;
+
+  // Sync to manual form inputs
+  if (d.title) document.getElementById('title').value = d.title;
+  if (d.description) document.getElementById('description').value = d.description;
+  if (d.deadline) document.getElementById('deadline').value = d.deadline;
+  if (d.budget) document.getElementById('amount').value = d.budget;
+  if (d.deliveryDetails) document.getElementById('deliveryDetails').value = d.deliveryDetails;
+}
+
+// Dynamic Category-Specific Suggestion Chips
+function getCategorySpecificDescriptionChips(title = '') {
+  const t = (title || '').toLowerCase();
+  
+  if (t.includes('logo') || t.includes('brand') || t.includes('identity')) {
+    return [
+      "🎨 3 Modern minimalist vector logo concepts with dark & light variations",
+      "📘 Complete brand guidelines book with color codes (HEX/CMYK) & font scale",
+      "📦 Full vector asset kit in SVG, high-res PNG, AI source & favicon formats"
+    ];
+  }
+  if (t.includes('web') || t.includes('react') || t.includes('node') || t.includes('full stack') || t.includes('frontend')) {
+    return [
+      "💻 Full responsive React/Next.js frontend with Node.js REST API & Supabase",
+      "⚡ High-converting business landing page with SEO & lead capture forms",
+      "🛒 E-commerce web app with product catalog, cart & Razorpay checkout"
+    ];
+  }
+  if (t.includes('mobile') || t.includes('flutter') || t.includes('react native') || t.includes('ios') || t.includes('android') || t.includes('app')) {
+    return [
+      "📱 Interactive 15-screen mobile app in Flutter for iOS & Android",
+      "⚡ Cross-platform React Native app with biometric login & push notifications",
+      "🚀 Native Android/iOS app with offline database sync & camera integration"
+    ];
+  }
+  if (t.includes('ui') || t.includes('ux') || t.includes('figma') || t.includes('design')) {
+    return [
+      "✨ Complete Figma design system with auto-layout & reusable components",
+      "📱 High-fidelity clickable interactive mobile app prototype in Figma",
+      "🎯 User journey maps, UX wireframes & developer-ready design tokens"
+    ];
+  }
+  if (t.includes('digital painting') || t.includes('painting') || t.includes('concept art') || t.includes('illustration') || t.includes('art')) {
+    return [
+      "🎨 Hyper-realistic digital character painting in 4K resolution",
+      "🖼️ Custom fantasy concept artwork with detailed lighting & layered PSD",
+      "✨ High-resolution printable digital illustration up to 300 DPI"
+    ];
+  }
+  if (t.includes('sketch') || t.includes('pencil') || t.includes('drawing') || t.includes('portrait')) {
+    return [
+      "✏️ Realistic graphite & charcoal portrait sketch on archival paper",
+      "🏛️ Handmade architectural pencil drawing with high-resolution scan",
+      "🖼️ Custom couple/family portrait sketch delivered with protective packaging"
+    ];
+  }
+  if (t.includes('wordpress') || t.includes('wp') || t.includes('cms')) {
+    return [
+      "🌐 Custom Elementor/Gutenberg WordPress business website with 5 pages",
+      "🛍️ WooCommerce online store setup with payment gateway & shipping rules",
+      "⚡ WordPress site speed optimization with 95+ Google PageSpeed score"
+    ];
+  }
+  if (t.includes('video') || t.includes('editing') || t.includes('reels') || t.includes('motion')) {
+    return [
+      "🎬 Cinematic 4K YouTube video editing with sound effects & color grading",
+      "🔥 15 dynamic Instagram Reels / TikToks with subtitles & viral hooks",
+      "✨ 2D motion graphics logo animation and explainer video in After Effects"
+    ];
+  }
+  if (t.includes('pot') || t.includes('ceramic') || t.includes('pottery') || t.includes('clay')) {
+    return [
+      "🏺 Handcrafted ceramic planter pot with customized hand-painted glaze",
+      "🪴 Set of 3 artistic decorative clay pots with terracotta floral motifs",
+      "🌿 Custom glazed bonsai ceramic pot delivered safely with foam packaging"
+    ];
+  }
+  if (t.includes('backend') || t.includes('api') || t.includes('database') || t.includes('express')) {
+    return [
+      "⚙️ Scalable Node.js / Express REST API with JWT authentication & MongoDB",
+      "🚀 High-performance microservice architecture with Redis caching & Docker",
+      "🔒 Secure PostgreSQL database schema design with automated backups"
+    ];
+  }
+  if (t.includes('writing') || t.includes('seo') || t.includes('content') || t.includes('blog')) {
+    return [
+      "✍️ 5 SEO-optimized long-form blog articles (1500+ words each) with keywords",
+      "📄 High-converting website copywriting for Home, About & Services pages",
+      "🎯 Professional whitepaper, company profile & press release writing"
+    ];
+  }
+
+  // Default clean specific deliverables
+  return [
+    "📦 Complete deliverable package with source files and documentation",
+    "⚡ Fully functional custom build with 1 round of revisions included",
+    "🚀 Production-ready assets and deployment walkthrough"
+  ];
+}
+
+// Move to next question or review
+function presentCurrentStep() {
+  if (aiState.step < AI_STEPS.length) {
+    const s = AI_STEPS[aiState.step];
+    document.getElementById('stepProgressBadge').textContent = `Step ${aiState.step + 1} of ${AI_STEPS.length}`;
+    document.getElementById('aiUserInput').placeholder = s.placeholder;
+    
+    // Dynamically pick tailored chips for Description & Delivery based on selected Title!
+    let activeChips = s.chips;
+    if (s.key === 'description') {
+      activeChips = getCategorySpecificDescriptionChips(aiState.deal.title);
+    } else if (s.key === 'deliveryDetails') {
+      const t = (aiState.deal.title || '').toLowerCase();
+      if (t.includes('logo') || t.includes('brand') || t.includes('ui') || t.includes('figma')) {
+        activeChips = ["🎨 Figma Link & SVG/AI Asset Package", "📦 ZIP Archive with Vector Exports & Font Kit", "🔗 Google Drive Folder with Brand Assets"];
+      } else if (t.includes('web') || t.includes('app') || t.includes('mobile') || t.includes('backend')) {
+        activeChips = ["🔗 GitHub Repository & Live Vercel Staging Link", "📱 APK/IPA Build + Source Code ZIP", "🚀 Live Production URL & Database Walkthrough"];
+      } else if (t.includes('sketch') || t.includes('pot') || t.includes('ceramic') || t.includes('painting')) {
+        activeChips = ["📦 High-Resolution 300 DPI Scans + Physical Courier Tracking", "🖼️ Layered PSD / TIFF File + Proof Photos", "🚚 Safe Insured Courier Delivery with Tracking Number"];
+      }
+    }
+
+    appendAiMessage(s.question, activeChips);
+    speakAI(s.speakText);
+  } else {
+    // Review and complete
+    document.getElementById('stepProgressBadge').textContent = `✓ Review Ready`;
+    const d = aiState.deal;
+    const summary = `
+      🎉 <strong>All project parameters have been configured!</strong><br/>
+      • <strong>Title:</strong> ${d.title}<br/>
+      • <strong>Budget:</strong> ₹${d.budget.toLocaleString('en-IN')} (Locked in Multi-Sig Escrow)<br/>
+      • <strong>Deadline:</strong> ${d.deadline}<br/>
+      • <strong>Delivery Scope:</strong> ${d.deliveryDetails}<br/><br/>
+      Say <strong>"Confirm Deal"</strong> or click <strong>"Confirm &amp; Generate Escrow Code"</strong> on the right to match verified freelancers!
+    `;
+    appendAiMessage(summary);
+    speakAI("Awesome! All project parameters are configured. Say Confirm Deal or click the gold button on the right to generate your escrow code!");
+  }
+}
+
+// Global Voice Intent Processor
+function processVoiceCommands(transcript) {
+  const lower = transcript.toLowerCase().trim();
+
+  // Voice confirmation
+  if (lower.includes('confirm deal') || lower.includes('create deal') || lower.includes('generate code') || lower === 'confirm' || lower === 'submit') {
+    document.getElementById('confirmAiDealBtn').click();
+    return true;
+  }
+
+  // Voice restart
+  if (lower === 'restart' || lower.includes('start over') || lower.includes('reset')) {
+    document.getElementById('resetAiFlowBtn').click();
+    return true;
+  }
+
+  // Voice freelancer selection
+  if (lower.includes('select ') || lower.includes('choose ') || lower.includes('pick ') || lower.includes('assign ')) {
+    const nameQuery = lower.replace(/^(select|choose|pick|assign)\s*(freelancer)?\s*/i, '').trim();
+    const foundFl = FREELANCERS_DATABASE.find(f => f.name.toLowerCase().includes(nameQuery) || nameQuery.includes(f.name.toLowerCase().split(' ')[0]));
+    if (foundFl) {
+      const matchBtn = document.querySelector(`.assign-freelancer-btn[data-fid="${foundFl.id}"]`);
+      if (matchBtn) {
+        speakAI(`Assigning ${foundFl.name} to deal...`);
+        matchBtn.click();
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+// Handle User Response (From voice, input, or chip)
+function handleUserAnswer(rawAnswer) {
+  const text = rawAnswer.trim();
+  if (!text) return;
+
+  // Check if it's a global voice command
+  if (processVoiceCommands(text)) {
+    return;
+  }
+
+  appendUserMessage(text);
+  document.getElementById('aiUserInput').value = '';
+  document.getElementById('liveStreamPreview').classList.remove('active');
+
+  if (aiState.step < AI_STEPS.length) {
+    const currentStepDef = AI_STEPS[aiState.step];
+    const parsedVal = currentStepDef.parse(text);
+    aiState.deal[currentStepDef.key] = parsedVal;
+    updateLivePreview();
+
+    aiState.step++;
+    setTimeout(() => {
+      presentCurrentStep();
+    }, 450);
+  } else {
+    // User sent text after review -> confirm deal
+    document.getElementById('confirmAiDealBtn').click();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// REAL WEB AUDIO API MICROPHONE VISUALIZER
+// ─────────────────────────────────────────────────────────────────
+async function attachAudioVisualizer(stream) {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    if (!aiState.audioContext) {
+      aiState.audioContext = new AudioContext();
+    }
+    if (aiState.audioContext.state === 'suspended') {
+      await aiState.audioContext.resume();
+    }
+    const source = aiState.audioContext.createMediaStreamSource(stream);
+    aiState.analyser = aiState.audioContext.createAnalyser();
+    aiState.analyser.fftSize = 32;
+    source.connect(aiState.analyser);
+
+    const bufferLength = aiState.analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const bars = [
+      document.getElementById('sb1'), document.getElementById('sb2'),
+      document.getElementById('sb3'), document.getElementById('sb4'),
+      document.getElementById('sb5'), document.getElementById('sb6'),
+      document.getElementById('sb7'), document.getElementById('sb8')
+    ];
+
+    function renderAudioWaves() {
+      if (!aiState.isListening) return;
+      aiState.animFrameId = requestAnimationFrame(renderAudioWaves);
+      aiState.analyser.getByteFrequencyData(dataArray);
+
+      for (let i = 0; i < bars.length; i++) {
+        if (bars[i]) {
+          const val = dataArray[i] || 0;
+          const h = Math.max(4, Math.min(24, Math.round((val / 255) * 24)));
+          bars[i].style.height = `${h}px`;
+        }
+      }
+    }
+    renderAudioWaves();
+  } catch(e) {}
+}
+
+// Initialize Speech Recognition (Voice Input)
+function initVoiceRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    const micBtn = document.getElementById('micBtn');
+    if (micBtn) micBtn.title = "Voice recognition not available. You can type in the input bar.";
+    return;
+  }
+
+  aiState.recognition = new SpeechRecognition();
+  aiState.recognition.continuous = false;
+  aiState.recognition.interimResults = true;
+  aiState.recognition.lang = 'en-IN';
+
+  aiState.recognition.onstart = () => {
+    aiState.isListening = true;
+    document.getElementById('micBtn').classList.add('listening');
+    document.getElementById('voiceWaveform').style.display = 'flex';
+    document.getElementById('waveformMsg').textContent = '🎙️ Listening... Speak your answer now';
+    document.getElementById('liveStreamPreview').classList.add('active');
+    document.getElementById('liveStreamTxt').textContent = 'Listening for speech...';
+    document.getElementById('aiStatusTxt').innerHTML = `<span class="status-dot-pulse" style="background:#ef4444;box-shadow:0 0 8px #ef4444"></span> 🎙️ Listening to you...`;
+  };
+
+  aiState.recognition.onresult = (event) => {
+    let interim = '';
+    let finalTranscript = '';
+
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      } else {
+        interim += event.results[i][0].transcript;
+      }
+    }
+
+    if (interim) {
+      document.getElementById('liveStreamTxt').textContent = interim;
+      document.getElementById('aiUserInput').value = interim;
+    }
+
+    if (finalTranscript) {
+      document.getElementById('liveStreamTxt').textContent = finalTranscript;
+      stopListening();
+      handleUserAnswer(finalTranscript);
+    }
+  };
+
+  aiState.recognition.onerror = (e) => {
+    stopListening();
+    if (e.error === 'not-allowed') {
+      showAlert('alertBox', 'warning', 'Microphone access was blocked. Please allow microphone permissions in your browser bar.');
+    }
+  };
+
+  aiState.recognition.onend = () => {
+    stopListening();
+  };
+}
+
+async function startListening() {
+  if (!aiState.recognition) {
+    showAlert('alertBox', 'warning', 'Speech recognition is not available in this browser. You can type your answer in the box.');
+    return;
+  }
+
+  try {
+    if (aiState.speechSynth) aiState.speechSynth.cancel();
+    
+    // Explicit microphone permission check
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        if (!aiState.micStream) {
+          aiState.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+        attachAudioVisualizer(aiState.micStream);
+      } catch(permErr) {}
+    }
+
+    aiState.recognition.start();
+  } catch(e) {}
+}
+
+function stopListening() {
+  aiState.isListening = false;
+  const micBtn = document.getElementById('micBtn');
+  if (micBtn) micBtn.classList.remove('listening');
+  const wf = document.getElementById('voiceWaveform');
+  if (wf) wf.style.display = 'none';
+  const preview = document.getElementById('liveStreamPreview');
+  if (preview) preview.classList.remove('active');
+  const el = document.getElementById('aiStatusTxt');
+  if (el) el.innerHTML = `<span class="status-dot-pulse"></span> Ready · Speak with 🎙️ or select chips`;
+  if (aiState.animFrameId) cancelAnimationFrame(aiState.animFrameId);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RENDER MATCHED FREELANCERS RESULT
+// ─────────────────────────────────────────────────────────────────
+function renderFreelancerMatches(dealDocId, matchedList, isDirectMatch) {
+  const container = document.getElementById('freelancerCardsList');
+  document.getElementById('matchingTitle').textContent = isDirectMatch
+    ? `🎯 Found ${matchedList.length} Verified Freelancers Matching Your Deal:`
+    : `⭐ Recommended Top-Rated Verified Freelancers:`;
+  document.getElementById('matchingSub').textContent = isDirectMatch
+    ? `// Click on any freelancer below or speak their name (e.g. "Select Rohan"):`
+    : `// Click any verified freelancer below to launch the interactive live escrow vault:`;
+
+  const titleVal = aiState.deal.title || document.getElementById('title')?.value || 'New Project';
+  const descVal = aiState.deal.description || document.getElementById('description')?.value || '';
+  const budgetVal = aiState.deal.budget || document.getElementById('amount')?.value || 32000;
+
+  const launchEscrowWorkflow = (f) => {
+    localStorage.setItem('sx_selected_freelancer', JSON.stringify(f));
+    localStorage.setItem('sx_last_created_deal', JSON.stringify({
+      dealId: dealDocId,
+      title: titleVal,
+      description: descVal,
+      budget: budgetVal,
+      freelancer: f
+    }));
+
+    const targetUrl = `how-it-works.html?fid=${f.id}&fname=${encodeURIComponent(f.name)}&femail=${encodeURIComponent(f.email)}&dealId=${dealDocId}&budget=${budgetVal}&title=${encodeURIComponent(titleVal)}&desc=${encodeURIComponent(descVal)}`;
+    window.location.href = targetUrl;
+  };
+
+  container.innerHTML = matchedList.map(f => `
+    <div class="freelancer-match-card" data-fid="${f.id}" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1.2rem;display:flex;flex-direction:column;gap:0.6rem;cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.borderColor='var(--gold)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)'">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <strong style="font-size:1.05rem;color:var(--text);text-decoration:underline;text-underline-offset:3px">${f.name}</strong>
+          <span class="badge badge-cyan">${f.domain}</span>
+        </div>
+        <span style="font-weight:700;color:var(--gold-bright);font-size:0.95rem">${f.rate}</span>
+      </div>
+      <div style="font-size:0.83rem;color:var(--text2);line-height:1.4">${f.bio}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem;font-size:0.75rem;color:var(--text3);font-family:'DM Mono',monospace;flex-wrap:wrap;gap:0.5rem">
+        <span>${f.rating} · ${f.projects} Projects · 📍 ${f.location}</span>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-outline btn-sm view-profile-btn" data-fid="${f.id}">👤 View Profile</button>
+          <button class="btn btn-gold btn-sm assign-freelancer-btn" data-dealid="${dealDocId}" data-fid="${f.id}" data-fname="${f.name}" data-femail="${f.email}">🚀 Start Escrow with ${f.name.split(' ')[0]} →</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Modal Setup
+  const modal = document.getElementById('freelancerProfileModal');
+  let currentFreelancerObj = null;
+
+  const openProfileModal = (freelancer) => {
+    if (!freelancer || !modal) return;
+    currentFreelancerObj = freelancer;
+    document.getElementById('modalAvatar').textContent = freelancer.name.charAt(0);
+    document.getElementById('modalName').textContent = freelancer.name;
+    document.getElementById('modalDomain').textContent = freelancer.domain;
+    document.getElementById('modalRating').textContent = freelancer.rating;
+    document.getElementById('modalProjects').textContent = `${freelancer.projects} Completed`;
+    document.getElementById('modalRate').textContent = freelancer.rate;
+    document.getElementById('modalBio').textContent = freelancer.bio;
+    document.getElementById('modalLocation').textContent = freelancer.location;
+    document.getElementById('modalExp').textContent = freelancer.exp;
+    document.getElementById('modalEmail').textContent = freelancer.email;
+
+    const modalAssignBtn = document.getElementById('modalAssignBtn');
+    if (modalAssignBtn) {
+      modalAssignBtn.textContent = `🚀 Start Escrow with ${freelancer.name} →`;
+    }
+
+    modal.style.display = 'flex';
+  };
+
+  const closeModal = () => { if (modal) modal.style.display = 'none'; };
+
+  document.getElementById('closeModalBtn')?.addEventListener('click', closeModal);
+  document.getElementById('modalCloseActionBtn')?.addEventListener('click', closeModal);
+
+  // Card click event listeners
+  container.querySelectorAll('.freelancer-match-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.classList.contains('assign-freelancer-btn')) return;
+      const fid = Number(card.dataset.fid);
+      const freelancer = FREELANCERS_DATABASE.find(item => item.id === fid);
+      openProfileModal(freelancer);
+    });
+  });
+
+  // Modal Assign Button Listener
+  const modalAssignBtn = document.getElementById('modalAssignBtn');
+  if (modalAssignBtn) {
+    modalAssignBtn.onclick = async () => {
+      if (!currentFreelancerObj) return;
+      modalAssignBtn.disabled = true;
+      modalAssignBtn.textContent = `🚀 Connecting ${currentFreelancerObj.name} to Escrow...`;
+
+      try {
+        await supabase.from('deals').update({
+          freelancer_name: currentFreelancerObj.name,
+          freelancer_email: currentFreelancerObj.email,
+          status: 'CLIENT_JOINED',
+          updated_at: new Date().toISOString()
+        }).eq('id', dealDocId).catch(() => {});
+
+        const existingLocal = JSON.parse(localStorage.getItem('sx_local_deals') || '[]');
+        const targetDeal = existingLocal.find(d => d.id === dealDocId || d.deal_id === dealDocId);
+        if (targetDeal) {
+          targetDeal.freelancer_name = currentFreelancerObj.name;
+          targetDeal.freelancer_email = currentFreelancerObj.email;
+          targetDeal.status = 'CLIENT_JOINED';
+          localStorage.setItem('sx_local_deals', JSON.stringify(existingLocal));
+        }
+      } catch(e) {}
+
+      launchEscrowWorkflow(currentFreelancerObj);
+    };
+  }
+
+  // Direct Assign Buttons on Cards
+  container.querySelectorAll('.assign-freelancer-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const fid = Number(btn.dataset.fid);
+      const f = FREELANCERS_DATABASE.find(item => item.id === fid) || {
+        id: fid,
+        name: btn.dataset.fname,
+        email: btn.dataset.femail
+      };
+
+      btn.disabled = true;
+      btn.textContent = '🚀 Opening Escrow...';
+
+      try {
+        await supabase.from('deals').update({
+          freelancer_name: f.name,
+          freelancer_email: f.email,
+          status: 'CLIENT_JOINED',
+          updated_at: new Date().toISOString()
+        }).eq('id', dealDocId).catch(() => {});
+
+        const existingLocal = JSON.parse(localStorage.getItem('sx_local_deals') || '[]');
+        const targetDeal = existingLocal.find(d => d.id === dealDocId || d.deal_id === dealDocId);
+        if (targetDeal) {
+          targetDeal.freelancer_name = f.name;
+          targetDeal.freelancer_email = f.email;
+          targetDeal.status = 'CLIENT_JOINED';
+          localStorage.setItem('sx_local_deals', JSON.stringify(existingLocal));
+        }
+      } catch(err) {}
+
+      launchEscrowWorkflow(f);
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CREATE DEAL ACTION LOGIC (Supabase + Local Fail-safe)
+// ─────────────────────────────────────────────────────────────────
+async function executeDealCreation(user, session) {
+  // Use smart fallbacks so user is never blocked
+  const title = aiState.deal.title || document.getElementById('title')?.value?.trim() || 'Custom Escrow Project';
+  const desc = aiState.deal.description || document.getElementById('description')?.value?.trim() || 'Deliverables and verified escrow milestone package.';
+  const deadline = aiState.deal.deadline || document.getElementById('deadline')?.value || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
+  const rawBudget = aiState.deal.budget || parseFloat(document.getElementById('amount')?.value);
+  const budget = (!isNaN(rawBudget) && rawBudget > 0) ? rawBudget : 32000;
+  const deliveryDetail = aiState.deal.deliveryDetails || document.getElementById('deliveryDetails')?.value?.trim() || 'GitHub repository and live staging deployment';
+
+  const confirmBtn = document.getElementById('confirmAiDealBtn');
+  const createBtn = document.getElementById('createBtn');
+  if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.innerHTML = '<span class="spinner"></span> Locking Escrow Vault...'; }
+  if (createBtn) { createBtn.disabled = true; createBtn.innerHTML = '<span class="spinner"></span> Creating deal...'; }
+
+  let userName = user?.email ? user.email.split('@')[0] : 'Client';
+  try {
+    if (user?.id) {
+      const { data: userDoc } = await supabase.from('users').select('name').eq('id', user.id).single();
+      if (userDoc && userDoc.name) userName = userDoc.name;
+    }
+  } catch(e) {}
+
+  const uniqueCode = genDealCode();
+  const dealId = genDealId();
+  const otp = generateOTP();
+
+  let dealObj = {
+    id: dealId,
+    deal_id: dealId,
+    unique_code: uniqueCode,
+    title,
+    description: desc,
+    deadline,
+    budget,
+    amount: budget,
+    delivery_details: deliveryDetail,
+    client_id: user?.id || null,
+    client_email: user?.email || 'client@nexrow.io',
+    client_name: userName,
+    freelancer_id: null,
+    freelancer_email: null,
+    freelancer_name: null,
+    status: 'WAITING_FOR_CLIENT',
+    otp,
+    created_at: new Date().toISOString()
+  };
+
+  try {
+    const isUUID = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const activeAuthId = session?.user?.id;
+    const validClientId = (activeAuthId && isUUID(activeAuthId)) ? activeAuthId : (user?.id && isUUID(user.id) ? user.id : null);
+    const validParticipants = validClientId ? [validClientId] : [];
+
+    const { data: docRef, error } = await supabase.from('deals').insert({
+      deal_id: dealId, unique_code: uniqueCode, title, description: desc, deadline, budget, delivery_details: deliveryDetail,
+      client_id: validClientId, client_email: user?.email || 'client@nexrow.io', client_name: userName,
+      freelancer_id: validClientId, freelancer_email: user?.email || 'client@nexrow.io', freelancer_name: userName,
+      participants: validParticipants,
+      status: 'WAITING_FOR_CLIENT', otp, proof_url: null, proof_type: null, delivery_message: null, dispute_reason: null
+    }).select().single();
+
+    if (!error && docRef) {
+      dealObj = docRef;
+    }
+  } catch(err) {
+    console.warn("Using offline local deal creation fallback:", err);
+  }
+
+  // Save to local storage cache
+  const existingLocal = JSON.parse(localStorage.getItem('sx_local_deals') || '[]');
+  existingLocal.unshift(dealObj);
+  localStorage.setItem('sx_local_deals', JSON.stringify(existingLocal));
+
+  // Find matching freelancers
+  const { matches, isDirectMatch } = findMatchingFreelancers(title, desc);
+
+  // Hide input forms and reveal code + matched freelancers screen
+  document.getElementById('aiModeArea').style.display = 'none';
+  document.getElementById('manualModeArea').style.display = 'none';
+  const modeBar = document.querySelector('.mode-switch-bar');
+  if (modeBar) modeBar.style.display = 'none';
+
+  document.getElementById('generatedCode').textContent = uniqueCode;
+  document.getElementById('viewDealBtn').href = `how-it-works.html?dealId=${dealObj.id}&budget=${budget}&title=${encodeURIComponent(title)}&desc=${encodeURIComponent(desc)}`;
+  document.getElementById('codeDisplay').classList.add('show');
+
+  // Trigger celebration confetti
+  launchConfettiCelebration();
+
+  // Render matched freelancers list
+  renderFreelancerMatches(dealObj.id, matches, isDirectMatch);
+
+  // Speak congratulatory confirmation
+  speakAI(`Congratulations! Your escrow deal is created with code ${uniqueCode}. Pick your freelancer below to launch your live workspace!`);
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    navigator.clipboard.writeText(uniqueCode).then(() => {
+      document.getElementById('copyBtn').textContent = '✓ Copied!';
+      setTimeout(() => { document.getElementById('copyBtn').textContent = '📋 Copy Deal Code'; }, 2000);
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PAGE INITIALIZATION
+// ─────────────────────────────────────────────────────────────────
+requireAuth(async (user, session) => {
+  setNavUser(user);
+  setupLogout();
+
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('deadline').min = today;
+
+  // Initialize Speech Voice & Recognition
+  initVoiceRecognition();
+
+  // Voice Toggle Button
+  const toggleSpeechBtn = document.getElementById('toggleSpeechVoiceBtn');
+  if (toggleSpeechBtn) {
+    toggleSpeechBtn.addEventListener('click', () => {
+      aiState.voiceEnabled = !aiState.voiceEnabled;
+      toggleSpeechBtn.classList.toggle('active', aiState.voiceEnabled);
+      document.getElementById('voiceStatusLabel').textContent = aiState.voiceEnabled ? 'ON' : 'OFF';
+      document.getElementById('speechIcon').textContent = aiState.voiceEnabled ? '🔊' : '🔇';
+      if (!aiState.voiceEnabled && aiState.speechSynth) aiState.speechSynth.cancel();
+    });
+  }
+
+  // Restart AI Flow Button
+  const resetAiBtn = document.getElementById('resetAiFlowBtn');
+  if (resetAiBtn) {
+    resetAiBtn.addEventListener('click', () => {
+      aiState.step = 0;
+      aiState.deal = { title: '', description: '', deadline: '', budget: 0, deliveryDetails: '' };
+      document.getElementById('aiChatStream').innerHTML = '';
+      updateLivePreview();
+      presentCurrentStep();
+    });
+  }
+
+  // Tab switching: AI Mode vs Manual Mode
+  const tabAi = document.getElementById('tabAiMode');
+  const tabManual = document.getElementById('tabManualMode');
+  const aiArea = document.getElementById('aiModeArea');
+  const manualArea = document.getElementById('manualModeArea');
+
+  tabAi.addEventListener('click', () => {
+    tabAi.classList.add('active');
+    tabManual.classList.remove('active');
+    aiArea.style.display = 'grid';
+    manualArea.classList.remove('show');
+  });
+
+  tabManual.addEventListener('click', () => {
+    tabManual.classList.add('active');
+    tabAi.classList.remove('active');
+    aiArea.style.display = 'none';
+    manualArea.classList.add('show');
+  });
+
+  // Chat send listeners
+  const sendBtn = document.getElementById('aiSendBtn');
+  const txtInput = document.getElementById('aiUserInput');
+
+  sendBtn.addEventListener('click', () => {
+    handleUserAnswer(txtInput.value);
+  });
+
+  txtInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleUserAnswer(txtInput.value);
+    }
+  });
+
+  // Mic Button listener
+  const micBtn = document.getElementById('micBtn');
+  micBtn.addEventListener('click', () => {
+    if (aiState.isListening) {
+      stopListening();
+      if (aiState.recognition) aiState.recognition.stop();
+    } else {
+      startListening();
+    }
+  });
+
+  // Start Step 1
+  presentCurrentStep();
+
+  // Create Deal confirmation triggers
+  document.getElementById('confirmAiDealBtn').addEventListener('click', () => {
+    executeDealCreation(user, session);
+  });
+
+  document.getElementById('createBtn').addEventListener('click', () => {
+    executeDealCreation(user, session);
+  });
+});
+
+// Celebration Confetti Particle Burst
+function launchConfettiCelebration() {
+  let canvas = document.getElementById('confettiCanvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.id = 'confettiCanvas';
+    canvas.style.position = 'fixed';
+    canvas.style.inset = '0';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '99999';
+    document.body.appendChild(canvas);
+  }
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ['#f59e0b', '#fbbf24', '#10b981', '#38bdf8', '#a855f7', '#ffffff'];
+  for (let i = 0; i < 90; i++) {
+    particles.push({
+      x: canvas.width / 2, y: canvas.height * 0.45,
+      vx: (Math.random() - 0.5) * 16, vy: (Math.random() - 0.7) * 15,
+      size: Math.random() * 8 + 4, color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360, rSpeed: (Math.random() - 0.5) * 10,
+      opacity: 1, gravity: 0.35
+    });
+  }
+
+  function updateConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = 0;
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.rotation += p.rSpeed; p.opacity -= 0.014;
+      if (p.opacity > 0) {
+        alive++;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.globalAlpha = Math.max(0, p.opacity);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+        ctx.restore();
+      }
+    });
+    if (alive > 0) requestAnimationFrame(updateConfetti);
+    else canvas.remove();
+  }
+  updateConfetti();
+}
+</script>
+</body>
+</html>

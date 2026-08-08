@@ -1451,7 +1451,7 @@ if (document.readyState === 'loading') {
 }
 </script>
 
-<!-- SupremeX / Nexrow Chat Widget -->
+// SupremeX / Nexrow Chat Widget
 <script type="module" src="../js/chat-widget.js"></script>
 <script type="module">
 document.getElementById('logoutBtn')?.addEventListener('click', async () => {
@@ -1466,5 +1466,30 @@ document.getElementById('logoutBtn')?.addEventListener('click', async () => {
   window.location.replace(isInPages ? '../index.html' : 'index.html');
 });
 </script>
+
+<!-- Floating Glassmorphic Mobile App Navigation Dock -->
+<div class="mobile-bottom-dock">
+  <a href="client-dashboard.html" class="dock-item active">
+    <span class="dock-icon">💼</span>
+    <span>Client Portal</span>
+  </a>
+  <a href="create-deal.html" class="dock-item">
+    <span class="dock-icon">🎙️</span>
+    <span>Voice Deal</span>
+  </a>
+  <a href="ai-agent-demo.html" class="dock-item">
+    <span class="dock-icon">🤖</span>
+    <span>AI Demo</span>
+  </a>
+  <a href="how-it-works.html" class="dock-item">
+    <span class="dock-icon">🚀</span>
+    <span>Walkthrough</span>
+  </a>
+  <a href="freelancer-dashboard.html" class="dock-item">
+    <span class="dock-icon">👨‍💻</span>
+    <span>Freelancer</span>
+  </a>
+</div>
+
 </body>
 </html>
